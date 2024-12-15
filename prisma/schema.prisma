@@ -1,0 +1,27 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Clause {
+  id          String    @id @default(cuid())
+  title       String
+  content     String
+  order       Int
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  Contract    Contract? @relation(fields: [contractId], references: [id])
+  contractId  String?
+}
+
+model Contract {
+  id        String   @id @default(cuid())
+  name      String
+  clauses   Clause[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+} 
