@@ -2,10 +2,8 @@ import { prisma } from '@/lib/db';
 import { NextResponse } from 'next/server';
 import type { ContractFormData } from '@/lib/types';
 
-export async function GET(
-    _request: Request,
-    { params }: { params: { id: string } }
-) {
+export async function GET(_request: Request, props: { params: Promise<{ id: string }> }) {
+    const params = await props.params;
     try {
         const contract = await prisma.contract.findUnique({
             where: { id: params.id },
@@ -39,10 +37,8 @@ export async function GET(
     }
 }
 
-export async function PUT(
-    request: Request,
-    { params }: { params: { id: string } }
-) {
+export async function PUT(request: Request, props: { params: Promise<{ id: string }> }) {
+    const params = await props.params;
     try {
         const data = (await request.json()) as ContractFormData;
 
@@ -87,10 +83,8 @@ export async function PUT(
     }
 }
 
-export async function DELETE(
-    _request: Request,
-    { params }: { params: { id: string } }
-) {
+export async function DELETE(_request: Request, props: { params: Promise<{ id: string }> }) {
+    const params = await props.params;
     try {
         // Supprimer d'abord les associations de clauses
         await prisma.clausesOnContracts.deleteMany({

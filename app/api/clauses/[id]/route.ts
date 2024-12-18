@@ -1,10 +1,8 @@
 import { prisma } from '@/lib/db';
 import { NextResponse } from 'next/server';
 
-export async function GET(
-    _request: Request,
-    { params }: { params: { id: string } }
-) {
+export async function GET(_request: Request, props: { params: Promise<{ id: string }> }) {
+    const params = await props.params;
     try {
         const clause = await prisma.clause.findUnique({
             where: { id: params.id },
@@ -27,10 +25,8 @@ export async function GET(
     }
 }
 
-export async function PUT(
-    request: Request,
-    { params }: { params: { id: string } }
-) {
+export async function PUT(request: Request, props: { params: Promise<{ id: string }> }) {
+    const params = await props.params;
     try {
         const { title, content } = await request.json();
         const updatedClause = await prisma.clause.update({
@@ -51,10 +47,8 @@ export async function PUT(
     }
 }
 
-export async function DELETE(
-    _request: Request,
-    { params }: { params: { id: string } }
-) {
+export async function DELETE(_request: Request, props: { params: Promise<{ id: string }> }) {
+    const params = await props.params;
     try {
         // Récupérer la clause à supprimer
         const clauseToDelete = await prisma.clause.findUnique({

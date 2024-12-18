@@ -1,20 +1,21 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import TipTapEditor from '@/components/TipTapEditor';
 import { Loader2 } from 'lucide-react';
 import { PageTransition } from '@/components/ui/transition';
 
-export default function ClauseForm({
-    params,
-    searchParams,
-}: {
-    params: { action: string };
-    searchParams: { id?: string };
-}) {
+export default function ClauseForm(
+    props: {
+        params: Promise<{ action: string }>;
+        searchParams: Promise<{ id?: string }>;
+    }
+) {
+    const searchParams = use(props.searchParams);
+    const params = use(props.params);
     const router = useRouter();
     const [title, setTitle] = useState('');
     const [editorContent, setEditorContent] = useState('');

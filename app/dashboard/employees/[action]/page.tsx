@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PageTransition } from '@/components/ui/transition';
@@ -18,13 +18,14 @@ import { useForm, Controller } from 'react-hook-form';
 import { employeeResolver, type EmployeeFormData } from '@/lib/validations';
 import { useToast } from '@/hooks/use-toast';
 
-export default function EmployeeForm({
-    params,
-    searchParams,
-}: {
-    params: { action: string };
-    searchParams: { id?: string };
-}) {
+export default function EmployeeForm(
+    props: {
+        params: Promise<{ action: string }>;
+        searchParams: Promise<{ id?: string }>;
+    }
+) {
+    const searchParams = use(props.searchParams);
+    const params = use(props.params);
     const router = useRouter();
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
