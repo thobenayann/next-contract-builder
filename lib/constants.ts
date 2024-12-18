@@ -3,6 +3,13 @@ export const DOCUMENT_TYPES = {
     AMENDMENT: 'AMENDMENT',
 } as const;
 
+export const DocumentTypes = {
+    Contract: DOCUMENT_TYPES.CONTRACT,
+    Amendment: DOCUMENT_TYPES.AMENDMENT,
+} satisfies Record<string, string>;
+
+export type DocumentType = (typeof DOCUMENT_TYPES)[keyof typeof DOCUMENT_TYPES];
+
 export const DOCUMENT_TYPES_LABELS = {
     CONTRACT: 'Contrat',
     AMENDMENT: 'Avenant',
@@ -27,8 +34,3 @@ export const CLAUSE_CATEGORIES_LABELS = {
     MANDATORY: 'Obligatoire',
     OPTIONAL: 'Optionnelle',
 } as const;
-
-export type DocumentType = (typeof DOCUMENT_TYPES)[keyof typeof DOCUMENT_TYPES];
-export type Gender = (typeof GENDERS)[keyof typeof GENDERS];
-export type ClauseCategory =
-    (typeof CLAUSE_CATEGORIES)[keyof typeof CLAUSE_CATEGORIES];

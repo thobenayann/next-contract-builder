@@ -1,21 +1,26 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { DraggableList } from './DraggableList';
-import { DeleteConfirmDialog } from './DeleteConfirmDialog';
-import { useRouter } from 'next/navigation';
-import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
-import type { Clause } from '@prisma/client';
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
-export function ClausesList({
-    initialClauses = [],
-}: {
+import { useEffect, useState } from 'react';
+
+import type { Clause } from '@prisma/client';
+import { Loader2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
+
+import { DeleteConfirmDialog } from './DeleteConfirmDialog';
+import { DraggableList } from './DraggableList';
+
+interface ClausesListProps {
     initialClauses: Clause[];
-}) {
+}
+
+export const ClausesList = ({ initialClauses = [] }: ClausesListProps) => {
     const router = useRouter();
-    const { addToast } = useToast();
+    const { toast } = useToast();
     const [clauses, setClauses] = useState<Clause[]>(initialClauses);
     const [deleteClause, setDeleteClause] = useState<Clause | null>(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -27,6 +32,16 @@ export function ClausesList({
         });
         setHasOrderChanged(orderChanged);
     }, [clauses, initialClauses]);
+
+    if (initialClauses.length === 0) {
+        return (
+            <div className='text-center p-8 border border-dashed rounded-lg'>
+                <p className='text-muted-foreground'>
+                    Aucune clause n&apos;a encore été créée.
+                </p>
+            </div>
+        );
+    }
 
     const handleEditClick = (clause: Clause) => {
         router.push(`/clauses/edit?id=${clause.id}`);
@@ -51,10 +66,10 @@ export function ClausesList({
 
             setClauses((prev) => prev.filter((c) => c.id !== deleteClause.id));
 
-            addToast({
+            toast({
                 title: 'Suppression réussie',
                 description: 'La clause a été supprimée avec succès',
-                type: 'success',
+                variant: 'success',
             });
 
             setDeleteClause(null);
@@ -62,10 +77,10 @@ export function ClausesList({
             router.refresh();
         } catch (error) {
             console.error('Erreur lors de la suppression:', error);
-            addToast({
+            toast({
                 title: 'Erreur',
                 description: 'Impossible de supprimer la clause',
-                type: 'error',
+                variant: 'error',
             });
         } finally {
             setIsLoading(false);
@@ -93,19 +108,19 @@ export function ClausesList({
                 throw new Error('Erreur lors de la sauvegarde');
             }
 
-            addToast({
+            toast({
                 title: 'Succès',
                 description: "L'ordre des clauses a été sauvegardé",
-                type: 'success',
+                variant: 'success',
             });
             router.refresh();
             setHasOrderChanged(false);
         } catch (error: unknown) {
             console.error('Erreur lors de la sauvegarde:', error);
-            addToast({
+            toast({
                 title: 'Erreur',
                 description: "Impossible de sauvegarder l'ordre",
-                type: 'error',
+                variant: 'error',
             });
         } finally {
             setIsLoading(false);
@@ -113,45 +128,37 @@ export function ClausesList({
     };
 
     return (
-        <div className="space-y-4">
-            <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold">Clauses de contrat</h2>
+        <div className='space-y-4'>
+            <div className='flex justify-between items-center'>
+                <h2 className='text-2xl font-bold'>Clauses de contrat</h2>
                 <Button onClick={() => router.push('/clauses/create')}>
                     Nouvelle clause
                 </Button>
             </div>
 
-            {clauses.length === 0 ? (
-                <p className="text-gray-500">
-                    Aucune clause n&apos;a encore été créée.
-                </p>
-            ) : (
-                <>
-                    <DraggableList
-                        items={clauses}
-                        setItems={setClauses}
-                        onEdit={handleEditClick}
-                        onDelete={handleDeleteClick}
-                    />
-                    <Button
-                        onClick={handleSaveOrder}
-                        disabled={isLoading || !hasOrderChanged}
-                        className="w-full"
-                        variant={hasOrderChanged ? 'default' : 'secondary'}
-                    >
-                        {isLoading ? (
-                            <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Sauvegarde en cours...
-                            </>
-                        ) : hasOrderChanged ? (
-                            "Sauvegarder l'ordre"
-                        ) : (
-                            'Aucun changement à sauvegarder'
-                        )}
-                    </Button>
-                </>
-            )}
+            <DraggableList
+                items={clauses}
+                setItems={setClauses}
+                onEdit={handleEditClick}
+                onDelete={handleDeleteClick}
+            />
+            <Button
+                onClick={handleSaveOrder}
+                disabled={isLoading || !hasOrderChanged}
+                className='w-full'
+                variant={hasOrderChanged ? 'default' : 'secondary'}
+            >
+                {isLoading ? (
+                    <>
+                        <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                        Sauvegarde en cours...
+                    </>
+                ) : hasOrderChanged ? (
+                    "Sauvegarder l'ordre"
+                ) : (
+                    'Aucun changement à sauvegarder'
+                )}
+            </Button>
 
             <DeleteConfirmDialog
                 isOpen={!!deleteClause}
@@ -162,4 +169,4 @@ export function ClausesList({
             />
         </div>
     );
-}
+};

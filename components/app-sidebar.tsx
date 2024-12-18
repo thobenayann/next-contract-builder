@@ -1,27 +1,27 @@
 'use client';
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { cn } from '@/lib/utils';
-import {
-    LayoutDashboard,
-    FileText,
-    FilePlus,
-    Settings,
-    FileStack,
-    ChevronLeft,
-    ChevronRight,
-    ScrollText,
-    Users,
-} from 'lucide-react';
-import { Button } from './ui/button';
-import { useState } from 'react';
 import {
     Tooltip,
     TooltipContent,
     TooltipProvider,
     TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
+import {
+    ChevronLeft,
+    ChevronRight,
+    FilePlus,
+    FileStack,
+    FileText,
+    LayoutDashboard,
+    ScrollText,
+    Settings,
+    Users,
+} from 'lucide-react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { useState } from 'react';
+import { Button } from './ui/button';
 
 const mainNav = [
     {
@@ -62,7 +62,7 @@ const mainNav = [
     },
 ];
 
-export function AppSidebar() {
+export const AppSidebar = () => {
     const pathname = usePathname();
     const [isCollapsed, setIsCollapsed] = useState(false);
 
@@ -78,7 +78,7 @@ export function AppSidebar() {
                     item.disabled && 'pointer-events-none opacity-50'
                 )}
             >
-                <item.icon className="h-4 w-4" />
+                <item.icon className='h-4 w-4' />
                 {!isCollapsed && <span>{item.title}</span>}
             </Link>
         );
@@ -106,30 +106,30 @@ export function AppSidebar() {
                 isCollapsed ? 'w-[60px]' : 'w-[200px]'
             )}
         >
-            <div className="flex h-full flex-col">
-                <div className="flex h-14 items-center justify-between border-b px-3 py-2">
-                    <div className="flex items-center gap-2 overflow-hidden">
-                        <ScrollText className="h-6 w-6 shrink-0 text-primary" />
+            <div className='flex h-full flex-col'>
+                <div className='flex h-14 items-center justify-between border-b px-3 py-2'>
+                    <div className='flex items-center gap-2 overflow-hidden'>
+                        <ScrollText className='h-6 w-6 shrink-0 text-primary' />
                         {!isCollapsed && (
-                            <span className="font-semibold truncate">
+                            <span className='font-semibold truncate'>
                                 DocFlow
                             </span>
                         )}
                     </div>
                     <Button
-                        variant="ghost"
-                        size="icon"
+                        variant='ghost'
+                        size='icon'
                         onClick={() => setIsCollapsed(!isCollapsed)}
-                        className="ml-auto shrink-0"
+                        className='ml-auto shrink-0'
                     >
                         {isCollapsed ? (
-                            <ChevronRight className="h-4 w-4" />
+                            <ChevronRight className='h-4 w-4' />
                         ) : (
-                            <ChevronLeft className="h-4 w-4" />
+                            <ChevronLeft className='h-4 w-4' />
                         )}
                     </Button>
                 </div>
-                <nav className="flex-1 space-y-1 p-2">
+                <nav className='flex-1 space-y-1 p-2'>
                     {mainNav.map((item, index) => (
                         <NavLink key={index} item={item} />
                     ))}
@@ -137,4 +137,4 @@ export function AppSidebar() {
             </div>
         </div>
     );
-}
+};

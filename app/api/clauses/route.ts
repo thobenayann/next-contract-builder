@@ -1,6 +1,11 @@
-import { prisma } from '@/lib/db';
 import { NextResponse } from 'next/server';
+
 import { CLAUSE_CATEGORIES } from '@/lib/constants';
+import { prisma } from '@/lib/db';
+
+export const fetchCache = 'default-cache';
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export async function POST(request: Request) {
     try {
