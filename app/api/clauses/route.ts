@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/db';
 import { NextResponse } from 'next/server';
+import { CLAUSE_CATEGORIES } from '@/lib/constants';
 
 export async function POST(request: Request) {
     try {
@@ -12,13 +13,14 @@ export async function POST(request: Request) {
             data: {
                 title,
                 content,
+                category: CLAUSE_CATEGORIES.OPTIONAL,
                 order: lastClause ? lastClause.order + 1 : 0,
             },
         });
 
         return NextResponse.json(newClause);
     } catch (error) {
-        console.error(error);
+        console.error('Erreur lors de la création:', error);
         return NextResponse.json(
             { error: 'Erreur lors de la création' },
             { status: 500 }
@@ -33,7 +35,7 @@ export async function GET() {
         });
         return NextResponse.json(clauses);
     } catch (error) {
-        console.error(error);
+        console.error('Erreur lors de la récupération:', error);
         return NextResponse.json(
             { error: 'Erreur lors de la récupération' },
             { status: 500 }

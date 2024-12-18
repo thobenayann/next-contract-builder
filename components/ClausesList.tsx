@@ -7,13 +7,7 @@ import { DeleteConfirmDialog } from './DeleteConfirmDialog';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
-
-interface Clause {
-    id: string;
-    title: string;
-    content: string;
-    order: number;
-}
+import type { Clause } from '@prisma/client';
 
 export function ClausesList({
     initialClauses = [],

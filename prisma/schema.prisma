@@ -7,21 +7,54 @@ datasource db {
   url      = "file:./dev.db"
 }
 
-model Clause {
+model Employee {
   id          String    @id @default(cuid())
-  title       String
-  content     String
-  order       Int
+  firstName   String
+  lastName    String
+  gender      String    // 'MALE', 'FEMALE', 'OTHER'
+  birthdate   DateTime
+  nationality String
+  ssn         String    // Social Security Number
+  companyId   String    // Référence à la future table Company
+  contract    Contract? // Un employé ne peut avoir qu'un seul contrat
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-  Contract    Contract? @relation(fields: [contractId], references: [id])
-  contractId  String?
+
+  @@unique([ssn]) // Garantit l'unicité du numéro de sécurité sociale
 }
 
 model Contract {
-  id        String   @id @default(cuid())
-  name      String
-  clauses   Clause[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String    @id @default(cuid())
+  type       String    @default("CONTRACT") // 'CONTRACT', 'AMENDMENT'
+  startDate  DateTime
+  endDate    DateTime?
+  employee   Employee  @relation(fields: [employeeId], references: [id])
+  employeeId String    @unique // Garantit qu'un employé n'a qu'un seul contrat
+  companyId  String    // Référence à la future table Company
+  clauses    ClausesOnContracts[]
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+}
+
+model Clause {
+  id         String    @id @default(cuid())
+  title      String
+  content    String
+  category   String    // 'MANDATORY', 'OPTIONAL'
+  contracts  ClausesOnContracts[]
+  order      Int
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+}
+
+model ClausesOnContracts {
+  contract   Contract @relation(fields: [contractId], references: [id])
+  contractId String
+  clause     Clause   @relation(fields: [clauseId], references: [id])
+  clauseId   String
+  order      Int      // Pour maintenir l'ordre des clauses dans chaque contrat
+
+  @@id([contractId, clauseId])
+  @@index([contractId])
+  @@index([clauseId])
 } 

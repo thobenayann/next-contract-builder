@@ -17,19 +17,13 @@ import {
 import { SortableItem } from './SortableItem';
 import { Button } from './ui/button';
 import { Pencil, Trash2 } from 'lucide-react';
-
-interface Item {
-    id: string;
-    title: string;
-    content: string;
-    order: number;
-}
+import type { Clause } from '@prisma/client';
 
 interface DraggableListProps {
-    items: Item[];
-    setItems: React.Dispatch<React.SetStateAction<Item[]>>;
-    onEdit: (item: Item) => void;
-    onDelete: (item: Item) => void;
+    items: Clause[];
+    setItems: (items: Clause[]) => void;
+    onEdit: (item: Clause) => void;
+    onDelete: (item: Clause) => void;
 }
 
 export function DraggableList({
@@ -41,7 +35,7 @@ export function DraggableList({
     const sensors = useSensors(
         useSensor(PointerSensor, {
             activationConstraint: {
-                distance: 8, // Distance minimale pour activer le drag
+                distance: 8,
             },
         }),
         useSensor(KeyboardSensor, {
@@ -53,26 +47,12 @@ export function DraggableList({
         const { active, over } = event;
 
         if (over && active.id !== over.id) {
-            setItems((items) => {
-                const oldIndex = items.findIndex(
-                    (item) => item.id === active.id
-                );
-                const newIndex = items.findIndex((item) => item.id === over.id);
+            const oldIndex = items.findIndex((item) => item.id === active.id);
+            const newIndex = items.findIndex((item) => item.id === over.id);
 
-                return arrayMove(items, oldIndex, newIndex);
-            });
+            setItems(arrayMove(items, oldIndex, newIndex));
         }
     }
-
-    const handleEditClick = (e: React.MouseEvent, item: Item) => {
-        e.stopPropagation();
-        onEdit(item);
-    };
-
-    const handleDeleteClick = (e: React.MouseEvent, item: Item) => {
-        e.stopPropagation();
-        onDelete(item);
-    };
 
     return (
         <DndContext
@@ -95,9 +75,7 @@ export function DraggableList({
                                     <Button
                                         variant="ghost"
                                         size="icon"
-                                        onClick={(e) =>
-                                            handleEditClick(e, item)
-                                        }
+                                        onClick={() => onEdit(item)}
                                         className="text-gray-600 hover:text-blue-600"
                                     >
                                         <Pencil className="h-4 w-4" />
@@ -106,9 +84,7 @@ export function DraggableList({
                                     <Button
                                         variant="ghost"
                                         size="icon"
-                                        onClick={(e) =>
-                                            handleDeleteClick(e, item)
-                                        }
+                                        onClick={() => onDelete(item)}
                                         className="text-gray-600 hover:text-red-600"
                                     >
                                         <Trash2 className="h-4 w-4" />

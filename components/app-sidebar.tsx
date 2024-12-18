@@ -12,6 +12,7 @@ import {
     ChevronLeft,
     ChevronRight,
     ScrollText,
+    Users,
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { useState } from 'react';
@@ -45,7 +46,13 @@ const mainNav = [
         title: 'Contrats',
         href: '/dashboard/contracts',
         icon: FileStack,
-        disabled: true,
+        disabled: false,
+    },
+    {
+        title: 'Employés',
+        href: '/dashboard/employees',
+        icon: Users,
+        disabled: false,
     },
     {
         title: 'Paramètres',
