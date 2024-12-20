@@ -1,16 +1,18 @@
 import { AppSidebar } from '@/components/app-sidebar';
 
-export default function DashboardLayout({
-    children,
-}: {
+interface DashboardLayoutProps {
     children: React.ReactNode;
-}) {
-    return (
-        <div className="flex min-h-screen">
-            <AppSidebar />
-            <main className="flex-1 transition-all duration-300 pl-[60px] lg:pl-[200px]">
-                <div className="container p-6">{children}</div>
-            </main>
-        </div>
-    );
 }
+
+const DashboardLayout = ({
+    children,
+}: DashboardLayoutProps): React.ReactElement => {
+    return (
+        <>
+            <AppSidebar />
+            <div className='ml-[200px] p-6'>{children}</div>
+        </>
+    );
+};
+
+export default DashboardLayout;

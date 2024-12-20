@@ -26,6 +26,8 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { NavUser } from '@/components/ui/nav-user';
+import { SidebarProvider } from '@/components/ui/sidebar';
 import { cn } from '@/lib/utils';
 
 import { Button } from './ui/button';
@@ -159,44 +161,50 @@ export const AppSidebar = () => {
     return (
         <div
             className={cn(
-                'fixed top-0 left-0 h-full border-r bg-background transition-all duration-300',
+                'fixed top-0 left-0 z-40 h-full border-r bg-background',
                 isCollapsed ? 'w-[60px]' : 'w-[200px]'
             )}
         >
-            <div className='flex h-full flex-col'>
-                <div className='flex h-14 items-center justify-between border-b px-3 py-2'>
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button
-                                variant='ghost'
-                                className='flex items-center gap-2 w-full justify-start'
+            <SidebarProvider>
+                <div className='flex h-full flex-col'>
+                    <div className='flex h-14 items-center justify-between border-b px-3 py-2'>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button
+                                    variant='ghost'
+                                    className='flex items-center gap-2 w-full justify-start'
+                                >
+                                    <Building2 className='h-4 w-4' />
+                                    {!isCollapsed && (
+                                        <>
+                                            <span>Entreprise</span>
+                                            <ChevronDown className='ml-auto h-4 w-4' />
+                                        </>
+                                    )}
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent
+                                align='start'
+                                className='w-[--radix-dropdown-menu-trigger-width]'
                             >
-                                <Building2 className='h-4 w-4' />
-                                {!isCollapsed && (
-                                    <>
-                                        <span>Entreprise</span>
-                                        <ChevronDown className='ml-auto h-4 w-4' />
-                                    </>
-                                )}
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent
-                            align='start'
-                            className='w-[--radix-dropdown-menu-trigger-width]'
-                        >
-                            <DropdownMenuItem>
-                                <span>Entreprise actuelle</span>
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                </div>
+                                <DropdownMenuItem>
+                                    <span>Entreprise actuelle</span>
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
 
-                <nav className='flex-1 space-y-1 p-2'>
-                    {mainNav.map((item, index) => (
-                        <NavLink key={index} item={item} />
-                    ))}
-                </nav>
-            </div>
+                    <nav className='flex-1 space-y-1 p-2'>
+                        {mainNav.map((item, index) => (
+                            <NavLink key={index} item={item} />
+                        ))}
+                    </nav>
+
+                    <div className='border-t p-2'>
+                        <NavUser />
+                    </div>
+                </div>
+            </SidebarProvider>
         </div>
     );
 };
