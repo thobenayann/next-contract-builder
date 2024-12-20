@@ -1,6 +1,7 @@
 import { GeistSans } from 'geist/font/sans';
 import type { Metadata } from 'next';
 
+import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/toaster';
 
 import './globals.css';
@@ -13,12 +14,23 @@ export const metadata: Metadata = {
 
 const RootLayout = ({ children }: { children: React.ReactNode }) => {
     return (
-        <html lang='fr' className={GeistSans.className}>
+        <html
+            lang='fr'
+            className={GeistSans.className}
+            suppressHydrationWarning
+        >
             <body>
                 <Providers>
-                    <main className='min-h-screen bg-background'>
-                        {children}
-                    </main>
+                    <ThemeProvider
+                        attribute='class'
+                        defaultTheme='system'
+                        enableSystem
+                        disableTransitionOnChange
+                    >
+                        <main className='min-h-screen bg-background'>
+                            {children}
+                        </main>
+                    </ThemeProvider>
                 </Providers>
                 <Toaster />
             </body>

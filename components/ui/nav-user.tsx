@@ -1,7 +1,8 @@
 'use client';
 
-import { ChevronsUpDown, LogOut, User } from 'lucide-react';
+import { ChevronsUpDown, LogOut, Moon, Sun, User } from 'lucide-react';
 import { signOut, useSession } from 'next-auth/react';
+import { useTheme } from 'next-themes';
 
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
@@ -22,7 +23,7 @@ import {
 export const NavUser = () => {
     const { data: session } = useSession();
     const { isMobile } = useSidebar();
-    console.log(session?.user);
+    const { theme, setTheme } = useTheme();
 
     if (!session?.user) return null;
 
@@ -75,6 +76,23 @@ export const NavUser = () => {
                             </div>
                         </DropdownMenuLabel>
                         <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                            onClick={() =>
+                                setTheme(theme === 'dark' ? 'light' : 'dark')
+                            }
+                        >
+                            {theme === 'dark' ? (
+                                <>
+                                    <Sun className='mr-2 size-4' />
+                                    Mode clair
+                                </>
+                            ) : (
+                                <>
+                                    <Moon className='mr-2 size-4' />
+                                    Mode sombre
+                                </>
+                            )}
+                        </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => signOut()}>
                             <LogOut className='mr-2 size-4' />
                             Se déconnecter
