@@ -1,7 +1,5 @@
 'use client';
 
-import type { Clause } from '@prisma/client';
-
 import {
     Select,
     SelectContent,
@@ -9,6 +7,9 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+
+import type { Clause } from '@prisma/client';
+
 
 interface ClauseSelectorProps {
     availableClauses: Clause[];

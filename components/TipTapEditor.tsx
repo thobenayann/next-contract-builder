@@ -1,3 +1,4 @@
+/* eslint-disable import/no-named-as-default */
 import { useEffect } from 'react';
 
 import Bold from '@tiptap/extension-bold';

@@ -6,7 +6,8 @@
         "dev": "next dev --turbopack",
         "build": "next build",
         "start": "next start",
-        "lint": "next lint"
+        "lint": "next lint",
+        "lint:fix": "next lint --fix"
     },
     "dependencies": {
         "@auth/prisma-adapter": "^2.7.4",
@@ -55,7 +56,9 @@
         "resend": "^4.0.1",
         "tailwind-merge": "^2.5.5",
         "tailwindcss-animate": "^1.0.7",
-        "zod": "^3.24.1"
+        "zod": "^3.24.1",
+        "@geist-ui/core": "latest",
+        "@geist-ui/icons": "latest"
     },
     "devDependencies": {
         "@types/node": "^20",

@@ -1,11 +1,11 @@
-import { GeistSans } from 'geist/font/sans';
-import type { Metadata } from 'next';
-
 import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/toaster';
 
-import './globals.css';
 import Providers from './providers';
+
+import type { Metadata } from 'next';
+
+import './globals.css';
 
 export const metadata: Metadata = {
     title: 'Éditeur de clauses',
@@ -14,11 +14,7 @@ export const metadata: Metadata = {
 
 const RootLayout = ({ children }: { children: React.ReactNode }) => {
     return (
-        <html
-            lang='fr'
-            className={GeistSans.className}
-            suppressHydrationWarning
-        >
+        <html lang='fr' className='font-sans' suppressHydrationWarning>
             <body>
                 <Providers>
                     <ThemeProvider

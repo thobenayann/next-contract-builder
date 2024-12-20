@@ -1,10 +1,7 @@
 'use client';
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { useEffect, useState } from 'react';
 
-import type { Clause } from '@prisma/client';
 import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
@@ -14,6 +11,8 @@ import { useToast } from '@/hooks/use-toast';
 import { DeleteConfirmDialog } from './DeleteConfirmDialog';
 import { DraggableList } from './DraggableList';
 import { ClausesSkeleton } from './skeletons/ClausesSkeleton';
+
+import type { Clause } from '@prisma/client';
 
 interface ClausesListProps {
     initialClauses: Clause[];
