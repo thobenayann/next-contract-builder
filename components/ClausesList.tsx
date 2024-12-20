@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 
 import { DeleteConfirmDialog } from './DeleteConfirmDialog';
 import { DraggableList } from './DraggableList';
+import { ClausesSkeleton } from './skeletons/ClausesSkeleton';
 
 interface ClausesListProps {
     initialClauses: Clause[];
@@ -23,7 +24,7 @@ export const ClausesList = ({ initialClauses = [] }: ClausesListProps) => {
     const { toast } = useToast();
     const [clauses, setClauses] = useState<Clause[]>(initialClauses);
     const [deleteClause, setDeleteClause] = useState<Clause | null>(null);
-    const [isLoading, setIsLoading] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
     const [hasOrderChanged, setHasOrderChanged] = useState(false);
 
     useEffect(() => {
@@ -32,6 +33,15 @@ export const ClausesList = ({ initialClauses = [] }: ClausesListProps) => {
         });
         setHasOrderChanged(orderChanged);
     }, [clauses, initialClauses]);
+
+    useEffect(() => {
+        const timer = setTimeout(() => setIsLoading(false), 500);
+        return () => clearTimeout(timer);
+    }, []);
+
+    if (isLoading) {
+        return <ClausesSkeleton />;
+    }
 
     if (initialClauses.length === 0) {
         return (
@@ -44,7 +54,7 @@ export const ClausesList = ({ initialClauses = [] }: ClausesListProps) => {
     }
 
     const handleEditClick = (clause: Clause) => {
-        router.push(`/clauses/edit?id=${clause.id}`);
+        router.push(`/dashboard/clauses/edit/${clause.id}`);
     };
 
     const handleDeleteClick = (clause: Clause) => {
@@ -60,20 +70,54 @@ export const ClausesList = ({ initialClauses = [] }: ClausesListProps) => {
                 method: 'DELETE',
             });
 
+            const data = await response.json();
+
+            if (response.status === 409) {
+                toast({
+                    title: 'Suppression impossible',
+                    description: (
+                        <div className='space-y-2'>
+                            <p>{data.message}</p>
+                            <div className='mt-2 space-y-1'>
+                                <p className='font-semibold'>
+                                    Contrats concernés :
+                                </p>
+                                {data.contracts.map((contract: any) => (
+                                    <p
+                                        key={contract.contractId}
+                                        className='text-sm'
+                                    >
+                                        • {contract.employeeName} -
+                                        {new Date(
+                                            contract.startDate
+                                        ).toLocaleDateString('fr-FR')}{' '}
+                                        -
+                                        {contract.contractType === 'CONTRACT'
+                                            ? 'Contrat'
+                                            : 'Avenant'}
+                                    </p>
+                                ))}
+                            </div>
+                        </div>
+                    ),
+                    variant: 'error',
+                    duration: 10000, // Durée plus longue pour laisser le temps de lire
+                });
+                setDeleteClause(null);
+                return;
+            }
+
             if (!response.ok) {
                 throw new Error('Erreur lors de la suppression');
             }
 
             setClauses((prev) => prev.filter((c) => c.id !== deleteClause.id));
-
             toast({
                 title: 'Suppression réussie',
                 description: 'La clause a été supprimée avec succès',
                 variant: 'success',
             });
-
             setDeleteClause(null);
-
             router.refresh();
         } catch (error) {
             console.error('Erreur lors de la suppression:', error);
@@ -131,7 +175,9 @@ export const ClausesList = ({ initialClauses = [] }: ClausesListProps) => {
         <div className='space-y-4'>
             <div className='flex justify-between items-center'>
                 <h2 className='text-2xl font-bold'>Clauses de contrat</h2>
-                <Button onClick={() => router.push('/clauses/create')}>
+                <Button
+                    onClick={() => router.push('/dashboard/clauses/create')}
+                >
                     Nouvelle clause
                 </Button>
             </div>

@@ -1,11 +1,17 @@
 'use client';
 
+import { use, useEffect, useState } from 'react';
+
+import type { Clause } from '@prisma/client';
+import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useState, useEffect, use } from 'react';
+import { Controller, useForm } from 'react-hook-form';
+
+import { ClauseSelector } from '@/components/ClauseSelector';
+import { DraggableList } from '@/components/DraggableList';
+import { ContractFormSkeleton } from '@/components/skeletons/ContractFormSkeleton';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { PageTransition } from '@/components/ui/transition';
-import { Loader2 } from 'lucide-react';
 import {
     Select,
     SelectContent,
@@ -13,13 +19,10 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { DOCUMENT_TYPES, DOCUMENT_TYPES_LABELS } from '@/lib/constants';
-import { DraggableList } from '@/components/DraggableList';
-import type { Clause } from '@prisma/client';
-import { ClauseSelector } from '@/components/ClauseSelector';
-import { Controller, useForm } from 'react-hook-form';
-import { contractResolver, type ContractFormData } from '@/lib/validations';
+import { PageTransition } from '@/components/ui/transition';
 import { useToast } from '@/hooks/use-toast';
+import { DOCUMENT_TYPES, DOCUMENT_TYPES_LABELS } from '@/lib/constants';
+import { contractResolver, type ContractFormData } from '@/lib/validations';
 
 interface Employee {
     id: string;
@@ -31,17 +34,20 @@ interface AvailableClause extends Clause {
     isSelected?: boolean;
 }
 
-export default function ContractForm(
-    props: {
-        params: Promise<{ action: string }>;
-        searchParams: Promise<{ id?: string; employeeId?: string }>;
-    }
-) {
+interface ContractClause {
+    clause: Clause;
+}
+
+const ContractForm = (props: {
+    params: Promise<{ action: string }>;
+    searchParams: Promise<{ id?: string; employeeId?: string }>;
+}) => {
     const searchParams = use(props.searchParams);
     const params = use(props.params);
     const router = useRouter();
     const { toast } = useToast();
-    const [isLoading, setIsLoading] = useState(false);
+    const [isLoading] = useState(false);
+    const [isInitialLoading, setIsInitialLoading] = useState(true);
     const {
         register,
         handleSubmit,
@@ -65,14 +71,20 @@ export default function ContractForm(
     );
     const [employees, setEmployees] = useState<Employee[]>([]);
     const isEditing = params.action === 'edit';
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Charger les clauses et les employés disponibles
     useEffect(() => {
         Promise.all([
             fetch('/api/clauses').then((res) => res.json()),
             fetch('/api/employees').then((res) => res.json()),
+            isEditing && searchParams.id
+                ? fetch(`/api/contracts/${searchParams.id}`).then((res) =>
+                      res.json()
+                  )
+                : Promise.resolve(null),
         ])
-            .then(([clauses, employees]) => {
+            .then(([clauses, employees, contract]) => {
                 setAvailableClauses(
                     clauses.map((clause: Clause) => ({
                         ...clause,
@@ -82,6 +94,28 @@ export default function ContractForm(
                     }))
                 );
                 setEmployees(employees);
+
+                if (contract) {
+                    // Pré-remplir le formulaire avec les données du contrat
+                    setValue('type', contract.type);
+                    setValue(
+                        'startDate',
+                        new Date(contract.startDate).toISOString().split('T')[0]
+                    );
+                    if (contract.endDate) {
+                        setValue(
+                            'endDate',
+                            new Date(contract.endDate)
+                                .toISOString()
+                                .split('T')[0]
+                        );
+                    }
+                    setValue('employeeId', contract.employeeId);
+                    setValue(
+                        'selectedClauses',
+                        contract.clauses.map((c: ContractClause) => c.clause)
+                    );
+                }
             })
             .catch((error) => {
                 console.error('Erreur lors du chargement des données:', error);
@@ -89,108 +123,59 @@ export default function ContractForm(
                     type: 'manual',
                     message: 'Erreur lors du chargement des données',
                 });
+            })
+            .finally(() => {
+                setIsInitialLoading(false);
             });
-    }, [setError]);
-
-    // Charger les données du contrat en mode édition
-    useEffect(() => {
-        if (isEditing && searchParams.id) {
-            setIsLoading(true);
-            fetch(`/api/contracts/${searchParams.id}`)
-                .then((res) => {
-                    if (!res.ok) throw new Error('Contrat non trouvé');
-                    return res.json();
-                })
-                .then((data) => {
-                    setValue('type', data.type);
-                    setValue(
-                        'startDate',
-                        new Date(data.startDate).toISOString().split('T')[0]
-                    );
-                    setValue(
-                        'endDate',
-                        data.endDate
-                            ? new Date(data.endDate).toISOString().split('T')[0]
-                            : undefined
-                    );
-                    setValue('employeeId', data.employeeId);
-                    setValue(
-                        'selectedClauses',
-                        data.clauses.map((c: { clause: Clause }) => ({
-                            ...c.clause,
-                            category: c.clause.category || 'OPTIONAL',
-                            createdAt: new Date(c.clause.createdAt),
-                            updatedAt: new Date(c.clause.updatedAt),
-                        }))
-                    );
-                })
-                .catch((err) => {
-                    console.error('Erreur lors du chargement:', err);
-                    setError('root', {
-                        type: 'manual',
-                        message: err.message || 'Erreur lors du chargement',
-                    });
-                })
-                .finally(() => {
-                    setIsLoading(false);
-                });
-        }
     }, [isEditing, searchParams.id, setValue, setError]);
 
     const onSubmit = async (data: ContractFormData) => {
-        setIsLoading(true);
+        setIsSubmitting(true);
 
         try {
             const url = isEditing
                 ? `/api/contracts/${searchParams.id}`
                 : '/api/contracts';
-            const method = isEditing ? 'PUT' : 'POST';
 
             const response = await fetch(url, {
-                method,
+                method: isEditing ? 'PUT' : 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data),
+                body: JSON.stringify({
+                    ...data,
+                    selectedClauses: data.selectedClauses.map((clause) => ({
+                        ...clause,
+                        createdAt: new Date(clause.createdAt).toISOString(),
+                        updatedAt: new Date(clause.updatedAt).toISOString(),
+                    })),
+                }),
             });
 
             const result = await response.json();
 
             if (!response.ok) {
-                if (result.issues) {
-                    result.issues.forEach(
-                        (issue: { path: string[]; message: string }) => {
-                            setError(issue.path[0] as keyof ContractFormData, {
-                                message: issue.message,
-                            });
-                        }
-                    );
-                    return;
-                }
-
-                throw new Error(result.error || 'Une erreur est survenue');
+                throw new Error(result.error || 'Erreur lors de la sauvegarde');
             }
 
             toast({
-                variant: 'success',
                 title: 'Succès',
-                description: isEditing
-                    ? 'Contrat modifié avec succès'
-                    : 'Contrat créé avec succès',
+                description: isEditing ? 'Contrat mis à jour' : 'Contrat créé',
+                variant: 'success',
             });
 
-            router.push('/dashboard/contracts');
+            await router.push('/dashboard/contracts');
             router.refresh();
         } catch (error) {
-            console.error('Erreur:', error);
+            console.error('Erreur complète:', error);
             toast({
-                variant: 'error',
                 title: 'Erreur',
                 description:
                     error instanceof Error
                         ? error.message
                         : 'Une erreur est survenue',
+                variant: 'error',
             });
         } finally {
-            setIsLoading(false);
+            setIsSubmitting(false);
         }
     };
 
@@ -201,22 +186,34 @@ export default function ContractForm(
             {
                 ...clause,
                 order: watch('selectedClauses').length,
+                createdAt: clause.createdAt.toISOString(),
+                updatedAt: clause.updatedAt.toISOString(),
             },
         ]);
     };
 
+    if (isInitialLoading) {
+        return (
+            <PageTransition>
+                <div className='container mx-auto p-4 max-w-4xl'>
+                    <ContractFormSkeleton />
+                </div>
+            </PageTransition>
+        );
+    }
+
     if (errors.type || errors.startDate || errors.employeeId) {
         return (
-            <div className="container mx-auto p-4 max-w-4xl">
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+            <div className='container mx-auto p-4 max-w-4xl'>
+                <div className='bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded'>
                     {errors.type?.message ||
                         errors.startDate?.message ||
                         errors.employeeId?.message}
                 </div>
                 <Button
-                    variant="outline"
+                    variant='outline'
                     onClick={() => router.push('/dashboard/contracts')}
-                    className="mt-4"
+                    className='mt-4'
                 >
                     Retour
                 </Button>
@@ -226,31 +223,31 @@ export default function ContractForm(
 
     return (
         <PageTransition>
-            <div className="container mx-auto p-4 max-w-4xl">
-                <div className="flex justify-between items-center mb-6">
-                    <h1 className="text-2xl font-bold">
+            <div className='container mx-auto p-4 max-w-4xl'>
+                <div className='flex justify-between items-center mb-6'>
+                    <h1 className='text-2xl font-bold'>
                         {isEditing
                             ? 'Modifier le contrat'
                             : 'Créer un nouveau contrat'}
                     </h1>
                     <Button
-                        variant="outline"
+                        variant='outline'
                         onClick={() => router.push('/dashboard/contracts')}
                     >
                         Retour
                     </Button>
                 </div>
-                <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
+                <form onSubmit={handleSubmit(onSubmit)} className='space-y-6'>
+                    <div className='grid grid-cols-2 gap-4'>
+                        <div className='space-y-2'>
                             <label
-                                htmlFor="type"
-                                className="text-sm font-medium"
+                                htmlFor='type'
+                                className='text-sm font-medium'
                             >
                                 Type de document
                             </label>
                             <Controller
-                                name="type"
+                                name='type'
                                 control={control}
                                 render={({ field, fieldState: { error } }) => (
                                     <>
@@ -260,7 +257,7 @@ export default function ContractForm(
                                             disabled={isLoading}
                                         >
                                             <SelectTrigger>
-                                                <SelectValue placeholder="Sélectionner" />
+                                                <SelectValue placeholder='Sélectionner' />
                                             </SelectTrigger>
                                             <SelectContent>
                                                 {Object.entries(
@@ -280,7 +277,7 @@ export default function ContractForm(
                                             </SelectContent>
                                         </Select>
                                         {error && (
-                                            <p className="text-sm text-red-500">
+                                            <p className='text-sm text-red-500'>
                                                 {error.message}
                                             </p>
                                         )}
@@ -289,10 +286,10 @@ export default function ContractForm(
                             />
                         </div>
 
-                        <div className="space-y-2">
+                        <div className='space-y-2'>
                             <label
-                                htmlFor="employeeId"
-                                className="text-sm font-medium"
+                                htmlFor='employeeId'
+                                className='text-sm font-medium'
                             >
                                 Employé
                             </label>
@@ -304,7 +301,7 @@ export default function ContractForm(
                                 disabled={!!searchParams.employeeId}
                             >
                                 <SelectTrigger>
-                                    <SelectValue placeholder="Sélectionner un employé" />
+                                    <SelectValue placeholder='Sélectionner un employé' />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {employees.map((employee) => (
@@ -320,64 +317,80 @@ export default function ContractForm(
                             </Select>
                         </div>
 
-                        <div className="space-y-2">
+                        <div className='space-y-2'>
                             <label
-                                htmlFor="startDate"
-                                className="text-sm font-medium"
+                                htmlFor='startDate'
+                                className='text-sm font-medium'
                             >
                                 Date de début
                             </label>
                             <Input
-                                id="startDate"
-                                type="date"
+                                id='startDate'
+                                type='date'
                                 {...register('startDate')}
                                 required
                             />
                         </div>
 
-                        <div className="space-y-2">
+                        <div className='space-y-2'>
                             <label
-                                htmlFor="endDate"
-                                className="text-sm font-medium"
+                                htmlFor='endDate'
+                                className='text-sm font-medium'
                             >
                                 Date de fin
                             </label>
                             <Input
-                                id="endDate"
-                                type="date"
+                                id='endDate'
+                                type='date'
                                 {...register('endDate')}
                             />
                         </div>
                     </div>
 
-                    <div className="space-y-4">
-                        <div className="flex justify-between items-center">
-                            <h3 className="text-lg font-medium">
+                    <div className='space-y-4'>
+                        <div className='flex justify-between items-center'>
+                            <h3 className='text-lg font-medium'>
                                 Clauses du contrat
                             </h3>
                             <ClauseSelector
                                 availableClauses={availableClauses}
-                                selectedClauses={watch('selectedClauses')}
+                                selectedClauses={watch('selectedClauses').map(
+                                    (clause) => ({
+                                        ...clause,
+                                        createdAt: new Date(clause.createdAt),
+                                        updatedAt: new Date(clause.updatedAt),
+                                    })
+                                )}
                                 onSelect={handleClauseSelect}
                             />
                         </div>
 
                         {watch('selectedClauses').length === 0 ? (
-                            <div className="text-center p-8 border border-dashed rounded-lg">
-                                <p className="text-muted-foreground">
+                            <div className='text-center p-8 border border-dashed rounded-lg'>
+                                <p className='text-muted-foreground'>
                                     Aucune clause n&apos;a été ajoutée à ce
                                     contrat.
                                 </p>
                             </div>
                         ) : (
                             <DraggableList
-                                items={watch('selectedClauses')}
+                                items={watch('selectedClauses').map(
+                                    (clause) => ({
+                                        ...clause,
+                                        createdAt: new Date(clause.createdAt),
+                                        updatedAt: new Date(clause.updatedAt),
+                                    })
+                                )}
                                 setItems={(newClauses) => {
                                     setValue(
                                         'selectedClauses',
-                                        newClauses.map((clause, index) => ({
+                                        newClauses.map((clause) => ({
                                             ...clause,
-                                            order: index,
+                                            order: clause.order,
+                                            createdAt:
+                                                clause.createdAt.toISOString(),
+                                            updatedAt:
+                                                clause.updatedAt.toISOString(),
                                         }))
                                     );
                                 }}
@@ -393,27 +406,39 @@ export default function ContractForm(
                                             }))
                                     );
                                 }}
+                                isFormContext={true}
+                                preventRefresh={true}
                             />
                         )}
                     </div>
 
-                    <div className="flex justify-end space-x-4">
+                    <div className='flex justify-end space-x-4'>
                         <Button
-                            variant="outline"
+                            variant='outline'
                             onClick={() => router.push('/dashboard/contracts')}
-                            type="button"
+                            type='button'
                         >
                             Annuler
                         </Button>
-                        <Button type="submit" disabled={isLoading}>
-                            {isLoading && (
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        <Button type='submit' disabled={isSubmitting}>
+                            {isSubmitting ? (
+                                <>
+                                    <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                                    {isEditing
+                                        ? 'Mise à jour...'
+                                        : 'Création...'}
+                                </>
+                            ) : isEditing ? (
+                                'Mettre à jour'
+                            ) : (
+                                'Créer'
                             )}
-                            {isEditing ? 'Mettre à jour' : 'Créer'}
                         </Button>
                     </div>
                 </form>
             </div>
         </PageTransition>
     );
-}
+};
+
+export default ContractForm;

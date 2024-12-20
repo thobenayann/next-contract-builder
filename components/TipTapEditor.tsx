@@ -1,21 +1,22 @@
-import { useEditor, EditorContent } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
+import { useEffect } from 'react';
+
 import Bold from '@tiptap/extension-bold';
-import Italic from '@tiptap/extension-italic';
-import Underline from '@tiptap/extension-underline';
-import Strike from '@tiptap/extension-strike';
 import Code from '@tiptap/extension-code';
 import Highlight from '@tiptap/extension-highlight';
+import Italic from '@tiptap/extension-italic';
 import Placeholder from '@tiptap/extension-placeholder';
+import Strike from '@tiptap/extension-strike';
+import Underline from '@tiptap/extension-underline';
+import { EditorContent, useEditor } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
 import {
     FaBold,
-    FaItalic,
-    FaUnderline,
-    FaStrikethrough,
     FaCode,
     FaHighlighter,
+    FaItalic,
+    FaStrikethrough,
+    FaUnderline,
 } from 'react-icons/fa';
-import { useEffect } from 'react';
 
 interface TipTapEditorProps {
     setContent: (content: string) => void;
@@ -97,19 +98,19 @@ const TipTapEditor = ({ setContent, initialContent }: TipTapEditorProps) => {
     );
 
     return (
-        <div className="border rounded-lg overflow-hidden">
-            <div className="bg-gray-100 p-2 flex space-x-2 border-b">
+        <div className='border rounded-lg overflow-hidden'>
+            <div className='bg-gray-100 p-2 flex space-x-2 border-b'>
                 <ToolbarButton
                     onClick={() => editor.chain().focus().toggleBold().run()}
                     isActive={editor.isActive('bold')}
                     icon={<FaBold />}
-                    label="Gras"
+                    label='Gras'
                 />
                 <ToolbarButton
                     onClick={() => editor.chain().focus().toggleItalic().run()}
                     isActive={editor.isActive('italic')}
                     icon={<FaItalic />}
-                    label="Italique"
+                    label='Italique'
                 />
                 <ToolbarButton
                     onClick={() =>
@@ -117,19 +118,19 @@ const TipTapEditor = ({ setContent, initialContent }: TipTapEditorProps) => {
                     }
                     isActive={editor.isActive('underline')}
                     icon={<FaUnderline />}
-                    label="Souligné"
+                    label='Souligné'
                 />
                 <ToolbarButton
                     onClick={() => editor.chain().focus().toggleStrike().run()}
                     isActive={editor.isActive('strike')}
                     icon={<FaStrikethrough />}
-                    label="Barré"
+                    label='Barré'
                 />
                 <ToolbarButton
                     onClick={() => editor.chain().focus().toggleCode().run()}
                     isActive={editor.isActive('code')}
                     icon={<FaCode />}
-                    label="Code"
+                    label='Code'
                 />
                 <ToolbarButton
                     onClick={() =>
@@ -137,10 +138,10 @@ const TipTapEditor = ({ setContent, initialContent }: TipTapEditorProps) => {
                     }
                     isActive={editor.isActive('highlight')}
                     icon={<FaHighlighter />}
-                    label="Surligner"
+                    label='Surligner'
                 />
             </div>
-            <EditorContent editor={editor} className="p-4 min-h-[200px]" />
+            <EditorContent editor={editor} className='p-4 min-h-[200px]' />
         </div>
     );
 };

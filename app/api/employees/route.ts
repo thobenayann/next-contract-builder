@@ -1,8 +1,9 @@
-import { prisma } from '@/lib/db';
-import { NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
-import { employeeSchema } from '@/lib/validations/employee';
+import { NextResponse } from 'next/server';
+
+import { prisma } from '@/lib/db';
 import { formatSSN } from '@/lib/utils';
+import { employeeSchema } from '@/lib/validations/employee';
 
 export async function POST(request: Request) {
     try {

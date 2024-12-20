@@ -1,11 +1,14 @@
 'use client';
 
+import { use, useEffect, useState } from 'react';
+
+import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useState, useEffect, use } from 'react';
+import { Controller, useForm } from 'react-hook-form';
+
+import { EmployeeFormSkeleton } from '@/components/skeletons/EmployeeFormSkeleton';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { PageTransition } from '@/components/ui/transition';
-import { Loader2 } from 'lucide-react';
 import {
     Select,
     SelectContent,
@@ -13,22 +16,21 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { GENDERS, GENDER_LABELS } from '@/lib/constants';
-import { useForm, Controller } from 'react-hook-form';
-import { employeeResolver, type EmployeeFormData } from '@/lib/validations';
+import { PageTransition } from '@/components/ui/transition';
 import { useToast } from '@/hooks/use-toast';
+import { GENDERS, GENDER_LABELS } from '@/lib/constants';
+import { employeeResolver, type EmployeeFormData } from '@/lib/validations';
 
-export default function EmployeeForm(
-    props: {
-        params: Promise<{ action: string }>;
-        searchParams: Promise<{ id?: string }>;
-    }
-) {
+const EmployeeForm = (props: {
+    params: Promise<{ action: string }>;
+    searchParams: Promise<{ id?: string }>;
+}) => {
     const searchParams = use(props.searchParams);
     const params = use(props.params);
     const router = useRouter();
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
+    const [isInitialLoading, setIsInitialLoading] = useState(true);
     const {
         register,
         handleSubmit,
@@ -77,6 +79,8 @@ export default function EmployeeForm(
                 .finally(() => {
                     setIsLoading(false);
                 });
+        } else {
+            setIsInitialLoading(false);
         }
     }, [isEditing, searchParams.id, reset, router, toast]);
 
@@ -137,71 +141,81 @@ export default function EmployeeForm(
         }
     };
 
+    if (isInitialLoading) {
+        return (
+            <PageTransition>
+                <div className='container mx-auto p-4 max-w-4xl'>
+                    <EmployeeFormSkeleton />
+                </div>
+            </PageTransition>
+        );
+    }
+
     return (
         <PageTransition>
-            <div className="container mx-auto p-4 max-w-4xl">
-                <div className="flex justify-between items-center mb-6">
-                    <h1 className="text-2xl font-bold">
+            <div className='container mx-auto p-4 max-w-4xl'>
+                <div className='flex justify-between items-center mb-6'>
+                    <h1 className='text-2xl font-bold'>
                         {isEditing
                             ? "Modifier l'employé"
                             : 'Créer un nouvel employé'}
                     </h1>
                     <Button
-                        variant="outline"
+                        variant='outline'
                         onClick={() => router.push('/dashboard/employees')}
                     >
                         Retour
                     </Button>
                 </div>
-                <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
+                <form onSubmit={handleSubmit(onSubmit)} className='space-y-6'>
+                    <div className='grid grid-cols-2 gap-4'>
+                        <div className='space-y-2'>
                             <label
-                                htmlFor="firstName"
-                                className="text-sm font-medium"
+                                htmlFor='firstName'
+                                className='text-sm font-medium'
                             >
                                 Prénom
                             </label>
                             <Input
-                                id="firstName"
+                                id='firstName'
                                 {...register('firstName')}
                                 disabled={isLoading}
                             />
                             {errors.firstName && (
-                                <p className="text-sm text-red-500">
+                                <p className='text-sm text-red-500'>
                                     {errors.firstName.message}
                                 </p>
                             )}
                         </div>
 
-                        <div className="space-y-2">
+                        <div className='space-y-2'>
                             <label
-                                htmlFor="lastName"
-                                className="text-sm font-medium"
+                                htmlFor='lastName'
+                                className='text-sm font-medium'
                             >
                                 Nom
                             </label>
                             <Input
-                                id="lastName"
+                                id='lastName'
                                 {...register('lastName')}
                                 disabled={isLoading}
                             />
                             {errors.lastName && (
-                                <p className="text-sm text-red-500">
+                                <p className='text-sm text-red-500'>
                                     {errors.lastName.message}
                                 </p>
                             )}
                         </div>
 
-                        <div className="space-y-2">
+                        <div className='space-y-2'>
                             <label
-                                htmlFor="gender"
-                                className="text-sm font-medium"
+                                htmlFor='gender'
+                                className='text-sm font-medium'
                             >
                                 Genre
                             </label>
                             <Controller
-                                name="gender"
+                                name='gender'
                                 control={control}
                                 render={({ field }) => (
                                     <Select
@@ -210,7 +224,7 @@ export default function EmployeeForm(
                                         disabled={isLoading}
                                     >
                                         <SelectTrigger>
-                                            <SelectValue placeholder="Sélectionner" />
+                                            <SelectValue placeholder='Sélectionner' />
                                         </SelectTrigger>
                                         <SelectContent>
                                             {Object.entries(GENDERS).map(
@@ -232,83 +246,83 @@ export default function EmployeeForm(
                                 )}
                             />
                             {errors.gender && (
-                                <p className="text-sm text-red-500">
+                                <p className='text-sm text-red-500'>
                                     {errors.gender.message}
                                 </p>
                             )}
                         </div>
 
-                        <div className="space-y-2">
+                        <div className='space-y-2'>
                             <label
-                                htmlFor="birthdate"
-                                className="text-sm font-medium"
+                                htmlFor='birthdate'
+                                className='text-sm font-medium'
                             >
                                 Date de naissance
                             </label>
                             <Input
-                                id="birthdate"
-                                type="date"
+                                id='birthdate'
+                                type='date'
                                 {...register('birthdate')}
                                 disabled={isLoading}
                             />
                             {errors.birthdate && (
-                                <p className="text-sm text-red-500">
+                                <p className='text-sm text-red-500'>
                                     {errors.birthdate.message}
                                 </p>
                             )}
                         </div>
 
-                        <div className="space-y-2">
+                        <div className='space-y-2'>
                             <label
-                                htmlFor="nationality"
-                                className="text-sm font-medium"
+                                htmlFor='nationality'
+                                className='text-sm font-medium'
                             >
                                 Nationalité
                             </label>
                             <Input
-                                id="nationality"
+                                id='nationality'
                                 {...register('nationality')}
                                 disabled={isLoading}
                             />
                             {errors.nationality && (
-                                <p className="text-sm text-red-500">
+                                <p className='text-sm text-red-500'>
                                     {errors.nationality.message}
                                 </p>
                             )}
                         </div>
 
-                        <div className="space-y-2">
+                        <div className='space-y-2'>
                             <label
-                                htmlFor="ssn"
-                                className="text-sm font-medium"
+                                htmlFor='ssn'
+                                className='text-sm font-medium'
                             >
                                 Numéro de sécurité sociale
                             </label>
                             <Input
-                                id="ssn"
+                                id='ssn'
                                 {...register('ssn')}
                                 disabled={isLoading}
                             />
                             {errors.ssn && (
-                                <p className="text-sm text-red-500">
+                                <p className='text-sm text-red-500'>
                                     {errors.ssn.message}
                                 </p>
                             )}
                         </div>
                     </div>
 
-                    <div className="flex justify-end space-x-4">
+                    <div className='flex justify-end space-x-4'>
                         <Button
-                            variant="outline"
+                            variant='outline'
                             onClick={() => router.push('/dashboard/employees')}
-                            type="button"
+                            type='button'
                             disabled={isLoading}
                         >
                             Annuler
                         </Button>
-                        <Button type="submit" disabled={isLoading}>
+                        <Button type='submit' disabled={isLoading}>
                             {isLoading && (
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                <Loader2 className='mr-2 h-4 w-4 animate-spin' />
                             )}
                             {isEditing ? 'Mettre à jour' : 'Créer'}
                         </Button>
@@ -317,4 +331,6 @@ export default function EmployeeForm(
             </div>
         </PageTransition>
     );
-}
+};
+
+export default EmployeeForm;

@@ -1,49 +1,46 @@
 'use client';
 
+import { use, useEffect, useState } from 'react';
+
+import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useState, useEffect, use } from 'react';
+
+import TipTapEditor from '@/components/TipTapEditor';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import TipTapEditor from '@/components/TipTapEditor';
-import { Loader2 } from 'lucide-react';
 import { PageTransition } from '@/components/ui/transition';
 
-export default function ClauseForm(
-    props: {
-        params: Promise<{ action: string }>;
-        searchParams: Promise<{ id?: string }>;
-    }
-) {
-    const searchParams = use(props.searchParams);
+interface PageProps {
+    params: Promise<{ id: string }>;
+}
+
+const EditClausePage = (props: PageProps) => {
     const params = use(props.params);
     const router = useRouter();
     const [title, setTitle] = useState('');
     const [editorContent, setEditorContent] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const isEditing = params.action === 'edit';
 
     useEffect(() => {
-        if (isEditing && searchParams.id) {
-            setIsLoading(true);
-            fetch(`/api/clauses/${searchParams.id}`)
-                .then((res) => {
-                    if (!res.ok) throw new Error('Clause non trouvée');
-                    return res.json();
-                })
-                .then((data) => {
-                    setTitle(data.title);
-                    setEditorContent(data.content);
-                })
-                .catch((err) => {
-                    setError(err.message);
-                    console.error('Erreur lors du chargement:', err);
-                })
-                .finally(() => {
-                    setIsLoading(false);
-                });
-        }
-    }, [isEditing, searchParams.id]);
+        setIsLoading(true);
+        fetch(`/api/clauses/${params.id}`)
+            .then((res) => {
+                if (!res.ok) throw new Error('Clause non trouvée');
+                return res.json();
+            })
+            .then((data) => {
+                setTitle(data.title);
+                setEditorContent(data.content);
+            })
+            .catch((err) => {
+                setError(err.message);
+                console.error('Erreur lors du chargement:', err);
+            })
+            .finally(() => {
+                setIsLoading(false);
+            });
+    }, [params.id]);
 
     const handleSubmit = async () => {
         if (!title.trim()) {
@@ -54,13 +51,8 @@ export default function ClauseForm(
         setIsLoading(true);
 
         try {
-            const url = isEditing
-                ? `/api/clauses/${searchParams.id}`
-                : '/api/clauses';
-            const method = isEditing ? 'PUT' : 'POST';
-
-            const response = await fetch(url, {
-                method,
+            const response = await fetch(`/api/clauses/${params.id}`, {
+                method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ title, content: editorContent }),
             });
@@ -69,7 +61,7 @@ export default function ClauseForm(
                 throw new Error('Erreur lors de la sauvegarde');
             }
 
-            router.push('/');
+            router.push('/dashboard/clauses');
             router.refresh();
         } catch (error) {
             setError(
@@ -85,14 +77,14 @@ export default function ClauseForm(
 
     if (error) {
         return (
-            <div className="container mx-auto p-4 max-w-4xl">
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+            <div className='container mx-auto p-4 max-w-4xl'>
+                <div className='bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded'>
                     {error}
                 </div>
                 <Button
-                    variant="outline"
-                    onClick={() => router.push('/')}
-                    className="mt-4"
+                    variant='outline'
+                    onClick={() => router.push('/dashboard/clauses')}
+                    className='mt-4'
                 >
                     Retour
                 </Button>
@@ -102,49 +94,48 @@ export default function ClauseForm(
 
     return (
         <PageTransition>
-            <div className="container mx-auto p-4 max-w-4xl">
-                <div className="flex justify-between items-center mb-6">
-                    <h1 className="text-2xl font-bold">
-                        {isEditing
-                            ? 'Modifier la clause'
-                            : 'Créer une nouvelle clause'}
-                    </h1>
-                    <Button variant="outline" onClick={() => router.push('/')}>
+            <div className='container mx-auto p-4 max-w-4xl'>
+                <div className='flex justify-between items-center mb-6'>
+                    <h1 className='text-2xl font-bold'>Modifier la clause</h1>
+                    <Button
+                        variant='outline'
+                        onClick={() => router.push('/dashboard/clauses')}
+                    >
                         Retour
                     </Button>
                 </div>
-                <div className="space-y-6">
+                <div className='space-y-6'>
                     <div>
                         <label
-                            htmlFor="title"
-                            className="block text-sm font-medium mb-2"
+                            htmlFor='title'
+                            className='block text-sm font-medium mb-2'
                         >
                             Titre de la clause
                         </label>
                         <Input
-                            id="title"
-                            placeholder="Titre de la clause"
+                            id='title'
+                            placeholder='Titre de la clause'
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
-                            className="w-full"
+                            className='w-full'
                             disabled={isLoading}
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium mb-2">
+                        <label className='block text-sm font-medium mb-2'>
                             Contenu de la clause
                         </label>
-                        <div className="prose-container w-full">
+                        <div className='prose-container w-full'>
                             <TipTapEditor
                                 setContent={setEditorContent}
                                 initialContent={editorContent}
                             />
                         </div>
                     </div>
-                    <div className="flex justify-end space-x-4">
+                    <div className='flex justify-end space-x-4'>
                         <Button
-                            variant="outline"
-                            onClick={() => router.push('/')}
+                            variant='outline'
+                            onClick={() => router.push('/dashboard/clauses')}
                         >
                             Annuler
                         </Button>
@@ -153,13 +144,15 @@ export default function ClauseForm(
                             disabled={isLoading || !title.trim()}
                         >
                             {isLoading && (
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                <Loader2 className='mr-2 h-4 w-4 animate-spin' />
                             )}
-                            {isEditing ? 'Mettre à jour' : 'Créer'}
+                            Mettre à jour
                         </Button>
                     </div>
                 </div>
             </div>
         </PageTransition>
     );
-}
+};
+
+export default EditClausePage;

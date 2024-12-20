@@ -1,7 +1,11 @@
-import { prisma } from '@/lib/db';
 import { NextResponse } from 'next/server';
 
-export async function GET(_request: Request, props: { params: Promise<{ id: string }> }) {
+import { prisma } from '@/lib/db';
+
+export async function GET(
+    _request: Request,
+    props: { params: Promise<{ id: string }> }
+) {
     const params = await props.params;
     try {
         const employee = await prisma.employee.findUnique({
@@ -26,7 +30,10 @@ export async function GET(_request: Request, props: { params: Promise<{ id: stri
     }
 }
 
-export async function PUT(request: Request, props: { params: Promise<{ id: string }> }) {
+export async function PUT(
+    request: Request,
+    props: { params: Promise<{ id: string }> }
+) {
     const params = await props.params;
     try {
         const data = await request.json();
@@ -47,7 +54,10 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
     }
 }
 
-export async function DELETE(_request: Request, props: { params: Promise<{ id: string }> }) {
+export async function DELETE(
+    _request: Request,
+    props: { params: Promise<{ id: string }> }
+) {
     const params = await props.params;
     try {
         await prisma.employee.delete({

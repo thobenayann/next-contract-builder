@@ -1,9 +1,13 @@
 'use client';
 
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { useEffect, useState } from 'react';
+
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useToast } from '@/hooks/use-toast';
+
+import { Button } from '@/components/ui/button';
 import {
     Table,
     TableBody,
@@ -12,53 +16,53 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
-import { DeleteConfirmDialog } from './DeleteConfirmDialog';
-import { Pencil, Trash2, Plus } from 'lucide-react';
-import type { ContractWithRelations } from '@/lib/types';
+import { useToast } from '@/hooks/use-toast';
 import { DOCUMENT_TYPES_LABELS } from '@/lib/constants';
+import type { ContractWithRelations } from '@/lib/types';
 
-export function ContractsList({
+import { DeleteConfirmDialog } from './DeleteConfirmDialog';
+
+export const ContractsList = ({
     initialContracts = [],
 }: {
     initialContracts: ContractWithRelations[];
-}) {
+}) => {
     const router = useRouter();
-    const { addToast } = useToast();
+    const { toast } = useToast();
     const [contracts, setContracts] = useState(initialContracts);
     const [deleteContract, setDeleteContract] =
         useState<ContractWithRelations | null>(null);
     const [isLoading, setIsLoading] = useState(false);
 
-    const handleDelete = async () => {
-        if (!deleteContract) return;
+    useEffect(() => {
+        if (contracts.length !== initialContracts.length) {
+            router.refresh();
+        }
+    }, [contracts.length, initialContracts.length, router]);
+
+    const handleDelete = async (contract: ContractWithRelations) => {
         setIsLoading(true);
 
         try {
-            const response = await fetch(
-                `/api/contracts/${deleteContract.id}`,
-                {
-                    method: 'DELETE',
-                }
-            );
+            const response = await fetch(`/api/contracts/${contract.id}`, {
+                method: 'DELETE',
+            });
 
             if (!response.ok) throw new Error('Erreur lors de la suppression');
 
-            setContracts(contracts.filter((c) => c.id !== deleteContract.id));
-            addToast({
+            setContracts((prev) => prev.filter((c) => c.id !== contract.id));
+            toast({
                 title: 'Succès',
-                description: 'Contrat supprimé avec succès',
-                type: 'success',
+                description: 'Le contrat a été supprimé',
+                variant: 'success',
             });
             setDeleteContract(null);
-            router.refresh();
         } catch (error) {
             console.error('Erreur lors de la suppression:', error);
-            addToast({
+            toast({
                 title: 'Erreur',
                 description: 'Impossible de supprimer le contrat',
-                type: 'error',
+                variant: 'error',
             });
         } finally {
             setIsLoading(false);
@@ -66,25 +70,25 @@ export function ContractsList({
     };
 
     return (
-        <div className="space-y-4">
-            <div className="flex justify-between items-center">
-                <h2 className="text-xl font-semibold">Liste des contrats</h2>
+        <div className='space-y-4'>
+            <div className='flex justify-between items-center'>
+                <h2 className='text-xl font-semibold'>Liste des contrats</h2>
                 <Button
                     onClick={() => router.push('/dashboard/contracts/create')}
                 >
-                    <Plus className="h-4 w-4 mr-2" />
+                    <Plus className='h-4 w-4 mr-2' />
                     Nouveau contrat
                 </Button>
             </div>
 
             {contracts.length === 0 ? (
-                <div className="text-center p-8 border border-dashed rounded-lg">
-                    <p className="text-muted-foreground">
+                <div className='text-center p-8 border border-dashed rounded-lg'>
+                    <p className='text-muted-foreground'>
                         Aucun contrat n&apos;a encore été créé.
                     </p>
                 </div>
             ) : (
-                <div className="border rounded-lg">
+                <div className='border rounded-lg'>
                     <Table>
                         <TableHeader>
                             <TableRow>
@@ -93,7 +97,7 @@ export function ContractsList({
                                 <TableHead>Date de début</TableHead>
                                 <TableHead>Date de fin</TableHead>
                                 <TableHead>Clauses</TableHead>
-                                <TableHead className="text-right">
+                                <TableHead className='text-right'>
                                     Actions
                                 </TableHead>
                             </TableRow>
@@ -135,26 +139,26 @@ export function ContractsList({
                                     <TableCell>
                                         {contract.clauses.length} clause(s)
                                     </TableCell>
-                                    <TableCell className="text-right space-x-2">
+                                    <TableCell className='text-right space-x-2'>
                                         <Button
-                                            variant="ghost"
-                                            size="icon"
+                                            variant='ghost'
+                                            size='icon'
                                             onClick={() =>
                                                 router.push(
                                                     `/dashboard/contracts/edit?id=${contract.id}`
                                                 )
                                             }
                                         >
-                                            <Pencil className="h-4 w-4" />
+                                            <Pencil className='h-4 w-4' />
                                         </Button>
                                         <Button
-                                            variant="ghost"
-                                            size="icon"
+                                            variant='ghost'
+                                            size='icon'
                                             onClick={() =>
                                                 setDeleteContract(contract)
                                             }
                                         >
-                                            <Trash2 className="h-4 w-4" />
+                                            <Trash2 className='h-4 w-4' />
                                         </Button>
                                     </TableCell>
                                 </TableRow>
@@ -167,14 +171,10 @@ export function ContractsList({
             <DeleteConfirmDialog
                 isOpen={!!deleteContract}
                 onClose={() => setDeleteContract(null)}
-                onConfirm={handleDelete}
-                title={
-                    deleteContract
-                        ? `le contrat de ${deleteContract.employee.lastName} ${deleteContract.employee.firstName}`
-                        : ''
-                }
+                onConfirm={() => deleteContract && handleDelete(deleteContract)}
+                title={deleteContract?.employee.firstName || ''}
                 isLoading={isLoading}
             />
         </div>
     );
-}
+};

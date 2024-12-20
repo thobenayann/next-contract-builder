@@ -1,5 +1,7 @@
 'use client';
 
+import type { Clause } from '@prisma/client';
+
 import {
     Select,
     SelectContent,
@@ -7,7 +9,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import type { Clause } from '@prisma/client';
 
 interface ClauseSelectorProps {
     availableClauses: Clause[];
@@ -15,26 +16,26 @@ interface ClauseSelectorProps {
     onSelect: (clause: Clause) => void;
 }
 
-export function ClauseSelector({
+export const ClauseSelector = ({
     availableClauses,
     selectedClauses,
     onSelect,
-}: ClauseSelectorProps) {
+}: ClauseSelectorProps) => {
     const unselectedClauses = availableClauses.filter(
         (clause) => !selectedClauses.find((sc) => sc.id === clause.id)
     );
 
     if (unselectedClauses.length === 0) {
         return (
-            <div className="text-sm text-muted-foreground">
+            <div className='text-sm text-muted-foreground'>
                 Toutes les clauses disponibles ont été ajoutées
             </div>
         );
     }
 
     return (
-        <div className="space-y-2">
-            <label className="text-sm font-medium">Ajouter une clause</label>
+        <div className='space-y-2'>
+            <label className='text-sm font-medium'>Ajouter une clause</label>
             <Select
                 onValueChange={(value) => {
                     const clause = availableClauses.find((c) => c.id === value);
@@ -42,7 +43,7 @@ export function ClauseSelector({
                 }}
             >
                 <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner une clause" />
+                    <SelectValue placeholder='Sélectionner une clause' />
                 </SelectTrigger>
                 <SelectContent>
                     {unselectedClauses.map((clause) => (
@@ -54,4 +55,4 @@ export function ClauseSelector({
             </Select>
         </div>
     );
-}
+};

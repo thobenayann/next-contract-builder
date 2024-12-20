@@ -1,4 +1,5 @@
 import React from 'react';
+
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
@@ -7,7 +8,7 @@ interface SortableItemProps {
     children: React.ReactNode;
 }
 
-export function SortableItem({ id, children }: SortableItemProps) {
+export const SortableItem = ({ id, children }: SortableItemProps) => {
     const {
         attributes,
         listeners,
@@ -29,9 +30,9 @@ export function SortableItem({ id, children }: SortableItemProps) {
             style={style}
             {...attributes}
             {...listeners}
-            className="bg-white rounded-lg shadow cursor-move relative"
+            className='bg-white rounded-lg shadow cursor-move relative'
         >
             {children}
         </li>
     );
-}
+};

@@ -1,13 +1,14 @@
+import { Loader2 } from 'lucide-react';
+
+import { Button } from '@/components/ui/button';
 import {
     Dialog,
     DialogContent,
-    DialogHeader,
-    DialogTitle,
     DialogDescription,
     DialogFooter,
+    DialogHeader,
+    DialogTitle,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Loader2 } from 'lucide-react';
 
 interface DeleteConfirmDialogProps {
     isOpen: boolean;
@@ -17,16 +18,16 @@ interface DeleteConfirmDialogProps {
     isLoading: boolean;
 }
 
-export function DeleteConfirmDialog({
+export const DeleteConfirmDialog = ({
     isOpen,
     onClose,
     onConfirm,
     title,
     isLoading,
-}: DeleteConfirmDialogProps) {
+}: DeleteConfirmDialogProps) => {
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent className='sm:max-w-[425px]'>
                 <DialogHeader>
                     <DialogTitle>Confirmer la suppression</DialogTitle>
                     <DialogDescription>
@@ -36,20 +37,20 @@ export function DeleteConfirmDialog({
                 </DialogHeader>
                 <DialogFooter>
                     <Button
-                        variant="outline"
+                        variant='outline'
                         onClick={onClose}
                         disabled={isLoading}
                     >
                         Annuler
                     </Button>
                     <Button
-                        variant="destructive"
+                        variant='destructive'
                         onClick={onConfirm}
                         disabled={isLoading}
                     >
                         {isLoading ? (
                             <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                <Loader2 className='mr-2 h-4 w-4 animate-spin' />
                                 Suppression en cours...
                             </>
                         ) : (
@@ -60,4 +61,4 @@ export function DeleteConfirmDialog({
             </DialogContent>
         </Dialog>
     );
-}
+};

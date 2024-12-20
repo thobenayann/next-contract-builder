@@ -1,10 +1,25 @@
-import { prisma } from '@/lib/db';
 import { NextResponse } from 'next/server';
+
+import { prisma } from '@/lib/db';
 import type { ContractFormData } from '@/lib/types';
+import { contractSchema } from '@/lib/validations/schemas/contract.schema';
 
 export async function POST(request: Request) {
     try {
         const data = (await request.json()) as ContractFormData;
+
+        // Validation avec Zod
+        const validationResult = contractSchema.safeParse(data);
+        if (!validationResult.success) {
+            console.error('Erreur de validation:', validationResult.error);
+            return NextResponse.json(
+                {
+                    error: 'Données invalides',
+                    issues: validationResult.error.issues,
+                },
+                { status: 400 }
+            );
+        }
 
         // Créer le contrat
         const contract = await prisma.contract.create({
@@ -13,13 +28,13 @@ export async function POST(request: Request) {
                 startDate: new Date(data.startDate),
                 endDate: data.endDate ? new Date(data.endDate) : null,
                 employeeId: data.employeeId,
-                companyId: '1', // À remplacer par la vraie companyId
+                companyId: '1',
             },
         });
 
-        // Associer les clauses au contrat
-        if (data.selectedClauses && data.selectedClauses.length > 0) {
-            await Promise.all(
+        // Créer les associations de clauses
+        if (data.selectedClauses.length > 0) {
+            const clauseAssociations = await Promise.all(
                 data.selectedClauses.map((clause, index) =>
                     prisma.clausesOnContracts.create({
                         data: {
@@ -30,11 +45,12 @@ export async function POST(request: Request) {
                     })
                 )
             );
+            console.log('Associations créées:', clauseAssociations);
         }
 
         return NextResponse.json(contract);
     } catch (error) {
-        console.error('Erreur lors de la création:', error);
+        console.error('Erreur détaillée:', error);
         return NextResponse.json(
             { error: 'Erreur lors de la création' },
             { status: 500 }

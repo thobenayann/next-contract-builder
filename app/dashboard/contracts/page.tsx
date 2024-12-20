@@ -1,12 +1,14 @@
-import { prisma } from '@/lib/db';
-import { PageTransition } from '@/components/ui/transition';
 import { Suspense } from 'react';
-import { LoadingSpinner } from '@/components/ui/loading';
-import { ContractsList } from '@/components/ContractsList';
-import { Button } from '@/components/ui/button';
+
 import Link from 'next/link';
 
-export default async function ContractsPage() {
+import { ContractsList } from '@/components/ContractsList';
+import { Button } from '@/components/ui/button';
+import { LoadingSpinner } from '@/components/ui/loading';
+import { PageTransition } from '@/components/ui/transition';
+import { prisma } from '@/lib/db';
+
+const ContractsPage = async () => {
     const [contracts, employeesCount] = await Promise.all([
         prisma.contract.findMany({
             include: {
@@ -30,19 +32,19 @@ export default async function ContractsPage() {
     return (
         <PageTransition>
             <Suspense fallback={<LoadingSpinner />}>
-                <div className="space-y-6">
-                    <h1 className="text-3xl font-bold">Gestion des contrats</h1>
+                <div className='space-y-6'>
+                    <h1 className='text-3xl font-bold'>Gestion des contrats</h1>
                     {employeesCount === 0 ? (
-                        <div className="rounded-lg border border-dashed p-8 text-center">
-                            <h2 className="text-lg font-semibold mb-2">
+                        <div className='rounded-lg border border-dashed p-8 text-center'>
+                            <h2 className='text-lg font-semibold mb-2'>
                                 Aucun employé n&apos;est enregistré
                             </h2>
-                            <p className="text-muted-foreground mb-4">
+                            <p className='text-muted-foreground mb-4'>
                                 Vous devez d&apos;abord créer un employé avant
                                 de pouvoir créer un contrat.
                             </p>
                             <Button asChild>
-                                <Link href="/dashboard/employees/create">
+                                <Link href='/dashboard/employees/create'>
                                     Créer un employé
                                 </Link>
                             </Button>
@@ -54,4 +56,6 @@ export default async function ContractsPage() {
             </Suspense>
         </PageTransition>
     );
-}
+};
+
+export default ContractsPage;

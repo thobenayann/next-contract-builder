@@ -21,15 +21,41 @@ export interface EmployeeWithContract extends Employee {
 }
 
 // Types pour les formulaires
+export interface ContractFormClause {
+    id: string;
+    title: string;
+    content: string;
+    category: string;
+    order: number;
+    createdAt: string;
+    updatedAt: string;
+}
+
 export interface ContractFormData {
     type: string;
     startDate: string;
     endDate?: string;
     employeeId: string;
-    selectedClauses: Clause[];
+    selectedClauses: ContractFormClause[];
 }
 
 // Types pour les composants
-export interface DraggableClause extends Clause {
-    isSelected?: boolean;
+export interface DraggableClause {
+    id: string;
+    title: string;
+    content: string;
+    category: string;
+    order: number;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export interface DraggableClauseItem {
+    id: string;
+    title: string;
+    content: string;
+    category: string;
+    order: number;
+    createdAt: string | Date;
+    updatedAt: string | Date;
 }

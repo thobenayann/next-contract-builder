@@ -1,8 +1,12 @@
-import { prisma } from '@/lib/db';
 import { NextResponse } from 'next/server';
-import type { ContractFormData } from '@/lib/types';
 
-export async function GET(_request: Request, props: { params: Promise<{ id: string }> }) {
+import { prisma } from '@/lib/db';
+import { ContractFormData } from '@/lib/validations/schemas/contract.schema';
+
+export async function GET(
+    _request: Request,
+    props: { params: Promise<{ id: string }> }
+) {
     const params = await props.params;
     try {
         const contract = await prisma.contract.findUnique({
@@ -37,12 +41,15 @@ export async function GET(_request: Request, props: { params: Promise<{ id: stri
     }
 }
 
-export async function PUT(request: Request, props: { params: Promise<{ id: string }> }) {
+export async function PUT(
+    request: Request,
+    props: { params: Promise<{ id: string }> }
+) {
     const params = await props.params;
     try {
         const data = (await request.json()) as ContractFormData;
 
-        // Mettre à jour le contrat
+        // Mise à jour du contrat
         const updatedContract = await prisma.contract.update({
             where: { id: params.id },
             data: {
@@ -53,13 +60,13 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
             },
         });
 
-        // Supprimer les anciennes associations de clauses
+        // Supprimer les anciennes associations
         await prisma.clausesOnContracts.deleteMany({
             where: { contractId: params.id },
         });
 
-        // Créer les nouvelles associations de clauses
-        if (data.selectedClauses && data.selectedClauses.length > 0) {
+        // Créer les nouvelles associations
+        if (data.selectedClauses.length > 0) {
             await Promise.all(
                 data.selectedClauses.map((clause, index) =>
                     prisma.clausesOnContracts.create({
@@ -83,10 +90,13 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
     }
 }
 
-export async function DELETE(_request: Request, props: { params: Promise<{ id: string }> }) {
+export async function DELETE(
+    _request: Request,
+    props: { params: Promise<{ id: string }> }
+) {
     const params = await props.params;
     try {
-        // Supprimer d'abord les associations de clauses
+        // D'abord supprimer les associations
         await prisma.clausesOnContracts.deleteMany({
             where: { contractId: params.id },
         });

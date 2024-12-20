@@ -6,17 +6,13 @@ export const contractSchema = z.object({
     type: z.enum([DOCUMENT_TYPES.CONTRACT, DOCUMENT_TYPES.AMENDMENT], {
         required_error: 'Le type de document est requis',
     }),
-    startDate: z
-        .string({
-            required_error: 'La date de début est requise',
-        })
-        .min(1, 'La date de début est requise'),
+    startDate: z.string({
+        required_error: 'La date de début est requise',
+    }),
     endDate: z.string().optional(),
-    employeeId: z
-        .string({
-            required_error: 'Veuillez sélectionner un employé',
-        })
-        .min(1, 'Veuillez sélectionner un employé'),
+    employeeId: z.string({
+        required_error: 'Veuillez sélectionner un employé',
+    }),
     selectedClauses: z.array(
         z.object({
             id: z.string(),
@@ -24,8 +20,8 @@ export const contractSchema = z.object({
             content: z.string(),
             category: z.string(),
             order: z.number(),
-            createdAt: z.date(),
-            updatedAt: z.date(),
+            createdAt: z.string(),
+            updatedAt: z.string(),
         })
     ),
 });

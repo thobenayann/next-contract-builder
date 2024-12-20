@@ -1,5 +1,7 @@
 import { LoadingSpinner } from '@/components/ui/loading';
 
-export default function Loading() {
+const Loading = () => {
     return <LoadingSpinner />;
-}
+};
+
+export default Loading;
