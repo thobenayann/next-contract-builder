@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Pencil, Plus, Trash2 } from 'lucide-react';
+import { Download, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
@@ -66,6 +66,33 @@ export const ContractsList = ({
             });
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const handleDownload = async (contract: ContractWithRelations) => {
+        try {
+            const response = await fetch(
+                `/api/contracts/${contract.id}/download`
+            );
+
+            if (!response.ok) throw new Error('Erreur lors du téléchargement');
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `contrat_${contract.employee.lastName}_${contract.employee.firstName}.docx`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            a.remove();
+        } catch (error) {
+            console.error('Erreur lors du téléchargement:', error);
+            toast({
+                title: 'Erreur',
+                description: 'Impossible de télécharger le contrat',
+                variant: 'error',
+            });
         }
     };
 
@@ -159,6 +186,15 @@ export const ContractsList = ({
                                             }
                                         >
                                             <Trash2 className='h-4 w-4' />
+                                        </Button>
+                                        <Button
+                                            variant='ghost'
+                                            size='icon'
+                                            onClick={() =>
+                                                handleDownload(contract)
+                                            }
+                                        >
+                                            <Download className='h-4 w-4' />
                                         </Button>
                                     </TableCell>
                                 </TableRow>
