@@ -1,7 +1,7 @@
 import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/toaster';
 
-import Providers from './providers';
+import { SessionProvider } from 'next-auth/react';
 
 import type { Metadata } from 'next';
 
@@ -16,7 +16,7 @@ const RootLayout = ({ children }: { children: React.ReactNode }) => {
     return (
         <html lang='fr' className='font-sans' suppressHydrationWarning>
             <body>
-                <Providers>
+                <SessionProvider>
                     <ThemeProvider
                         attribute='class'
                         defaultTheme='system'
@@ -27,7 +27,7 @@ const RootLayout = ({ children }: { children: React.ReactNode }) => {
                             {children}
                         </main>
                     </ThemeProvider>
-                </Providers>
+                </SessionProvider>
                 <Toaster />
             </body>
         </html>

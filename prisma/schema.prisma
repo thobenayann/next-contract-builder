@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model Employee {
@@ -19,6 +19,8 @@ model Employee {
   contract    Contract? // Un employé ne peut avoir qu'un seul contrat
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  userId      String    // Ajout de la référence à l'utilisateur
+  user        User      @relation(fields: [userId], references: [id])
 
   @@unique([ssn]) // Garantit l'unicité du numéro de sécurité sociale
 }
@@ -34,6 +36,8 @@ model Contract {
   clauses     ClausesOnContracts[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  userId      String    // Ajout de la référence à l'utilisateur
+  user        User      @relation(fields: [userId], references: [id])
 }
 
 model Clause {
@@ -45,6 +49,8 @@ model Clause {
   order      Int
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
+  userId     String    // Ajout de la référence à l'utilisateur
+  user       User      @relation(fields: [userId], references: [id])
 }
 
 model ClausesOnContracts {
@@ -94,6 +100,9 @@ model User {
   image         String?
   accounts      Account[]
   sessions      Session[]
+  employees     Employee[] // Ajout de la relation inverse
+  contracts     Contract[] // Ajout de la relation inverse
+  clauses       Clause[]   // Ajout de la relation inverse
 }
 
 model VerificationToken {

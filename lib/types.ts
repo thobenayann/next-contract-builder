@@ -48,6 +48,7 @@ export interface DraggableClause {
     order: number;
     createdAt: Date;
     updatedAt: Date;
+    userId: string;
 }
 
 export interface DraggableClauseItem {

@@ -1,21 +1,32 @@
-// eslint-disable-next-line import/order
-import { getToken } from 'next-auth/jwt';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
-export async function middleware(request: NextRequest) {
-    const token = await getToken({
-        req: request,
-        secret: process.env.AUTH_SECRET,
-    });
+export function middleware(request: NextRequest) {
+    const { pathname } = request.nextUrl;
+    const token = request.cookies.get('next-auth.session-token')?.value;
 
-    if (!token && request.nextUrl.pathname.startsWith('/dashboard')) {
-        return NextResponse.redirect(new URL('/auth/signin', request.url));
+    // Protection des routes dashboard
+    if (pathname.startsWith('/dashboard')) {
+        if (!token) {
+            const url = new URL('/auth/signin', request.url);
+            url.searchParams.set('callbackUrl', encodeURI(request.url));
+            return NextResponse.redirect(url);
+        }
+    }
+
+    // Redirection des utilisateurs connectés
+    if (pathname.startsWith('/auth') && token) {
+        return NextResponse.redirect(new URL('/dashboard', request.url));
     }
 
     return NextResponse.next();
 }
 
 export const config = {
-    matcher: ['/((?!api|_next/static|_next/image|favicon.ico|auth).*)'],
+    matcher: [
+        '/dashboard/:path*',
+        '/auth/signin',
+        '/auth/signup',
+        '/auth/verify',
+    ],
 };

@@ -1,24 +1,27 @@
 import { NextResponse } from 'next/server';
 
-import { CLAUSE_CATEGORIES } from '@/lib/constants';
+import { auth } from '@/auth';
 import { prisma } from '@/lib/db';
 
-export const fetchCache = 'default-cache';
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+export const runtime = 'nodejs';
 
 export async function POST(request: Request) {
+    const session = await auth();
+    if (!session?.user?.id) {
+        return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
+    }
+
     try {
-        const { title, content } = await request.json();
+        const data = await request.json();
         const lastClause = await prisma.clause.findFirst({
             orderBy: { order: 'desc' },
+            where: { userId: session.user.id },
         });
 
         const newClause = await prisma.clause.create({
             data: {
-                title,
-                content,
-                category: CLAUSE_CATEGORIES.OPTIONAL,
+                ...data,
+                userId: session.user.id,
                 order: lastClause ? lastClause.order + 1 : 0,
             },
         });
@@ -34,8 +37,14 @@ export async function POST(request: Request) {
 }
 
 export async function GET() {
+    const session = await auth();
+    if (!session?.user?.id) {
+        return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
+    }
+
     try {
         const clauses = await prisma.clause.findMany({
+            where: { userId: session.user.id },
             orderBy: { order: 'asc' },
         });
         return NextResponse.json(clauses);
