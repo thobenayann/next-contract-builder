@@ -11,32 +11,32 @@ model Employee {
   id          String    @id @default(cuid())
   firstName   String
   lastName    String
-  gender      String    // 'MALE', 'FEMALE', 'OTHER'
+  gender      String
   birthdate   DateTime
   nationality String
-  ssn         String    // Social Security Number
-  companyId   String    // Référence à la future table Company
-  contract    Contract? // Un employé ne peut avoir qu'un seul contrat
+  ssn         String
+  companyId   String
+  contract    Contract?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-  userId      String    // Ajout de la référence à l'utilisateur
+  userId      String
   user        User      @relation(fields: [userId], references: [id])
 
-  @@unique([ssn]) // Garantit l'unicité du numéro de sécurité sociale
+  @@unique([ssn])
 }
 
 model Contract {
   id          String    @id @default(cuid())
-  type        String    // 'CONTRACT' ou 'AMENDMENT'
+  type        String
   startDate   DateTime
   endDate     DateTime?
   employeeId  String    @unique
   employee    Employee  @relation(fields: [employeeId], references: [id])
-  companyId   String    // Référence à la future table Company
+  companyId   String
   clauses     ClausesOnContracts[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-  userId      String    // Ajout de la référence à l'utilisateur
+  userId      String
   user        User      @relation(fields: [userId], references: [id])
 }
 
@@ -44,12 +44,12 @@ model Clause {
   id         String    @id @default(cuid())
   title      String
   content    String
-  category   String    // 'MANDATORY', 'OPTIONAL'
+  category   String 
   contracts  ClausesOnContracts[]
   order      Int
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
-  userId     String    // Ajout de la référence à l'utilisateur
+  userId     String
   user       User      @relation(fields: [userId], references: [id])
 }
 
@@ -58,7 +58,7 @@ model ClausesOnContracts {
   contractId String
   clause     Clause   @relation(fields: [clauseId], references: [id])
   clauseId   String
-  order      Int      // Pour maintenir l'ordre des clauses dans chaque contrat
+  order      Int
 
   @@id([contractId, clauseId])
   @@index([contractId])
@@ -66,49 +66,50 @@ model ClausesOnContracts {
 }
 
 model Account {
-  id                String  @id @default(cuid())
-  userId            String
-  type              String
-  provider          String
-  providerAccountId String
-  refresh_token     String?
-  access_token      String?
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String?
-  session_state     String?
+  id           String    @id
+  accountId    String
+  providerId   String
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken  String?
+  refreshToken String?
+  idToken      String?
+  expiresAt    DateTime?
+  password     String?
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([provider, providerAccountId])
+  @@map("account")
 }
 
 model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        String   @id
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("session")
 }
 
 model User {
-  id            String    @id @default(cuid())
+  id            String    @id
+  email         String    @unique
   name          String?
-  email         String?   @unique
-  emailVerified DateTime?
-  image         String?
+  emailVerified Boolean
   accounts      Account[]
   sessions      Session[]
-  employees     Employee[] // Ajout de la relation inverse
-  contracts     Contract[] // Ajout de la relation inverse
-  clauses       Clause[]   // Ajout de la relation inverse
+  employees     Employee[]
+  contracts     Contract[]
+  clauses       Clause[]
+
+  @@map("user")
 }
 
 model VerificationToken {
+  id         String   @id
   identifier String
-  token      String   @unique
-  expires    DateTime
+  value      String
+  expiresAt  DateTime
 
-  @@unique([identifier, token])
+  @@map("verification")
 } 

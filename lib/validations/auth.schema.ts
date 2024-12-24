@@ -10,6 +10,24 @@ export const signUpSchema = z.object({
         .email('Email invalide')
         .min(5, 'Email trop court')
         .max(100, 'Email trop long'),
+    password: z
+        .string()
+        .min(6, 'Le mot de passe doit contenir au moins 6 caractères')
+        .max(50, 'Le mot de passe ne peut pas dépasser 50 caractères'),
 });
 
 export type SignUpInput = z.infer<typeof signUpSchema>;
+
+export const signInSchema = z.object({
+    email: z
+        .string()
+        .email('Email invalide')
+        .min(5, 'Email trop court')
+        .max(100, 'Email trop long'),
+    password: z
+        .string()
+        .min(6, 'Le mot de passe doit contenir au moins 6 caractères')
+        .max(50, 'Le mot de passe ne peut pas dépasser 50 caractères'),
+});
+
+export type SignInInput = z.infer<typeof signInSchema>;

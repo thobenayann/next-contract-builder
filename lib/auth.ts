@@ -1,9 +1,13 @@
-import { auth } from '@/auth';
+import { prisma } from '@/lib/db';
+import { betterAuth } from 'better-auth';
+import { prismaAdapter } from 'better-auth/adapters/prisma';
 
-export async function getCurrentUser() {
-    const session = await auth();
-    if (!session?.user) {
-        throw new Error('Non authentifié');
-    }
-    return session.user;
-}
+export const auth = betterAuth({
+    database: prismaAdapter(prisma, {
+        provider: 'postgresql',
+    }),
+    emailAndPassword: {
+        enabled: true,
+        autoSignIn: false,
+    },
+});

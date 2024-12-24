@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2 } from 'lucide-react';
 import { signIn } from 'next-auth/react';
-// eslint-disable-next-line import/order
+
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 
@@ -42,6 +42,7 @@ export const SignUpForm = ({
         defaultValues: {
             name: '',
             email: '',
+            password: '',
         },
     });
 
@@ -129,6 +130,26 @@ export const SignUpForm = ({
                                                 {...field}
                                                 type='email'
                                                 placeholder='m@example.com'
+                                                className='border-white/10 bg-white/5 text-white placeholder:text-gray-500'
+                                            />
+                                        </FormControl>
+                                        <FormMessage className='text-red-400' />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name='password'
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className='text-gray-300'>
+                                            Mot de passe
+                                        </FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                {...field}
+                                                type='password'
+                                                placeholder='********'
                                                 className='border-white/10 bg-white/5 text-white placeholder:text-gray-500'
                                             />
                                         </FormControl>
