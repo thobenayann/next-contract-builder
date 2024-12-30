@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 
 import { Loader2 } from 'lucide-react';
-import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
@@ -22,7 +21,6 @@ interface ClausesListProps {
 export const ClausesList = ({ initialClauses = [] }: ClausesListProps) => {
     const router = useRouter();
     const { toast } = useToast();
-    const { data: session } = useSession();
     const [clauses, setClauses] = useState<Clause[]>(initialClauses);
     const [deleteClause, setDeleteClause] = useState<Clause | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -189,7 +187,7 @@ export const ClausesList = ({ initialClauses = [] }: ClausesListProps) => {
                     setClauses(
                         newClauses.map((clause) => ({
                             ...clause,
-                            userId: clause.userId ?? session?.user?.id ?? '',
+                            userId: clause.userId ?? '',
                         }))
                     );
                 }}

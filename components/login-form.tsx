@@ -27,7 +27,10 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { authClient } from '@/lib/auth-client';
 import { cn } from '@/lib/utils';
-import { SignInInput, signInSchema } from '@/lib/validations/auth.schema';
+import {
+    SignInInput,
+    signInSchema,
+} from '@/lib/validations/schemas/auth.schema';
 
 export const LoginForm = ({
     className,
@@ -150,7 +153,7 @@ export const LoginForm = ({
                     <p className='text-sm text-gray-400'>
                         Pas encore de compte ?{' '}
                         <Link
-                            href='/auth/signup'
+                            href='/auth/sign-up'
                             className='text-purple-400 underline underline-offset-4 hover:text-purple-300'
                         >
                             Créer un compte

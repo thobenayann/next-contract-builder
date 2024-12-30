@@ -1,7 +1,6 @@
 'use client';
 
 import { ChevronsUpDown, LogOut, Moon, Sun, User } from 'lucide-react';
-import { signOut, useSession } from 'next-auth/react';
 import { useTheme } from 'next-themes';
 
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -21,11 +20,10 @@ import {
 } from '@/components/ui/sidebar';
 
 export const NavUser = () => {
-    const { data: session } = useSession();
     const { isMobile } = useSidebar();
     const { theme, setTheme } = useTheme();
 
-    if (!session?.user) return null;
+    // if (!session?.user) return null;
 
     return (
         <SidebarMenu>
@@ -43,10 +41,10 @@ export const NavUser = () => {
                             </Avatar>
                             <div className='grid flex-1 text-left text-sm leading-tight'>
                                 <span className='truncate font-semibold'>
-                                    {session.user.name || 'Utilisateur'}
+                                    {'Utilisateur'}
                                 </span>
                                 <span className='truncate text-xs'>
-                                    {session.user.email}
+                                    {'email@example.com'}
                                 </span>
                             </div>
                             <ChevronsUpDown className='ml-auto size-4' />
@@ -67,10 +65,10 @@ export const NavUser = () => {
                                 </Avatar>
                                 <div className='grid flex-1 text-left text-sm leading-tight'>
                                     <span className='truncate font-semibold'>
-                                        {session.user.name || 'Utilisateur'}
+                                        {'Utilisateur'}
                                     </span>
                                     <span className='truncate text-xs'>
-                                        {session.user.email}
+                                        {'email@example.com'}
                                     </span>
                                 </div>
                             </div>
@@ -93,7 +91,7 @@ export const NavUser = () => {
                                 </>
                             )}
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => signOut()}>
+                        <DropdownMenuItem onClick={() => console.log('logout')}>
                             <LogOut className='mr-2 size-4' />
                             Se déconnecter
                         </DropdownMenuItem>

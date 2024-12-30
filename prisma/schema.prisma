@@ -1,3 +1,4 @@
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -26,31 +27,31 @@ model Employee {
 }
 
 model Contract {
-  id          String    @id @default(cuid())
-  type        String
-  startDate   DateTime
-  endDate     DateTime?
-  employeeId  String    @unique
-  employee    Employee  @relation(fields: [employeeId], references: [id])
-  companyId   String
-  clauses     ClausesOnContracts[]
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  userId      String
-  user        User      @relation(fields: [userId], references: [id])
+  id         String               @id @default(cuid())
+  type       String
+  startDate  DateTime
+  endDate    DateTime?
+  employeeId String               @unique
+  employee   Employee             @relation(fields: [employeeId], references: [id])
+  companyId  String
+  clauses    ClausesOnContracts[]
+  createdAt  DateTime             @default(now())
+  updatedAt  DateTime             @updatedAt
+  userId     String
+  user       User                 @relation(fields: [userId], references: [id])
 }
 
 model Clause {
-  id         String    @id @default(cuid())
-  title      String
-  content    String
-  category   String 
-  contracts  ClausesOnContracts[]
-  order      Int
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-  userId     String
-  user       User      @relation(fields: [userId], references: [id])
+  id        String               @id @default(cuid())
+  title     String
+  content   String
+  category  String
+  contracts ClausesOnContracts[]
+  order     Int
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+  userId    String
+  user      User                 @relation(fields: [userId], references: [id])
 }
 
 model ClausesOnContracts {
@@ -77,23 +78,33 @@ model Account {
   expiresAt    DateTime?
   password     String?
 
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  createdAt             DateTime
+  updatedAt             DateTime
+
   @@map("account")
 }
 
 model Session {
-  id        String   @id
-  expiresAt DateTime
+  id        String   @id @default(cuid())
+  token     String   @map("sessionToken")
   ipAddress String?
   userAgent String?
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  expiresAt DateTime
+  createdAt DateTime
+  updatedAt DateTime
+
   @@map("session")
 }
 
 model User {
-  id            String    @id
-  email         String    @unique
+  id            String     @id
+  email         String     @unique
   name          String?
   emailVerified Boolean
   accounts      Account[]
@@ -102,14 +113,20 @@ model User {
   contracts     Contract[]
   clauses       Clause[]
 
+  image     String?
+  createdAt DateTime
+  updatedAt DateTime
+
   @@map("user")
 }
 
-model VerificationToken {
-  id         String   @id
+model Verification {
+  id         String    @id
   identifier String
   value      String
   expiresAt  DateTime
+  createdAt  DateTime?
+  updatedAt  DateTime?
 
   @@map("verification")
-} 
+}

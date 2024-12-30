@@ -1,8 +1,6 @@
 import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/toaster';
 
-import { SessionProvider } from 'next-auth/react';
-
 import type { Metadata } from 'next';
 
 import './globals.css';
@@ -16,18 +14,16 @@ const RootLayout = ({ children }: { children: React.ReactNode }) => {
     return (
         <html lang='fr' className='font-sans' suppressHydrationWarning>
             <body>
-                <SessionProvider>
-                    <ThemeProvider
-                        attribute='class'
-                        defaultTheme='system'
-                        enableSystem
-                        disableTransitionOnChange
-                    >
-                        <main className='min-h-screen bg-background'>
-                            {children}
-                        </main>
-                    </ThemeProvider>
-                </SessionProvider>
+                <ThemeProvider
+                    attribute='class'
+                    defaultTheme='system'
+                    enableSystem
+                    disableTransitionOnChange
+                >
+                    <main className='min-h-screen bg-background'>
+                        {children}
+                    </main>
+                </ThemeProvider>
                 <Toaster />
             </body>
         </html>

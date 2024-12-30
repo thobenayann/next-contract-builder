@@ -1,12 +1,10 @@
 'use client';
 
-import { useState } from 'react';
-
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2 } from 'lucide-react';
-import { signIn } from 'next-auth/react';
-
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { Button } from '@/components/ui/button';
@@ -27,8 +25,12 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import { authClient } from '@/lib/auth-client';
 import { cn } from '@/lib/utils';
-import { SignUpInput, signUpSchema } from '@/lib/validations/auth.schema';
+import {
+    SignUpInput,
+    signUpSchema,
+} from '@/lib/validations/schemas/auth.schema';
 
 export const SignUpForm = ({
     className,
@@ -36,6 +38,7 @@ export const SignUpForm = ({
 }: React.ComponentPropsWithoutRef<'div'>) => {
     const [isLoading, setIsLoading] = useState(false);
     const { toast } = useToast();
+    const router = useRouter();
 
     const form = useForm<SignUpInput>({
         resolver: zodResolver(signUpSchema),
@@ -46,40 +49,41 @@ export const SignUpForm = ({
         },
     });
 
-    const onSubmit = async (data: SignUpInput) => {
+    async function onSubmit(values: SignUpInput) {
         setIsLoading(true);
-
-        try {
-            const result = await signIn('email', {
-                email: data.email,
-                name: data.name,
-                redirect: false,
-            });
-
-            if (result?.error) {
-                toast({
-                    title: 'Erreur',
-                    description: "Une erreur s'est produite",
-                    variant: 'error',
-                });
-            } else {
-                toast({
-                    title: 'Email envoyé',
-                    description:
-                        'Vérifiez votre boîte mail pour vous connecter',
-                });
+        const { name, email, password } = values;
+        const { data, error } = await authClient.signUp.email(
+            {
+                email,
+                password,
+                name,
+                callbackURL: '/auth/sign-in',
+            },
+            {
+                onRequest: () => {
+                    setIsLoading(true);
+                },
+                onSuccess: () => {
+                    form.reset();
+                    setIsLoading(false);
+                    toast({
+                        title: 'Compte créé avec succès ! 🎉',
+                        description: 'Vous pouvez maintenant vous connecter',
+                        variant: 'success',
+                    });
+                    router.push('/auth/sign-in');
+                },
+                onError: (ctx) => {
+                    toast({ title: ctx.error.message, variant: 'error' });
+                    form.setError('email', {
+                        type: 'manual',
+                        message: ctx.error.message,
+                    });
+                    setIsLoading(false);
+                },
             }
-        } catch (error) {
-            console.error(error);
-            toast({
-                title: 'Erreur',
-                description: "Une erreur s'est produite",
-                variant: 'error',
-            });
-        } finally {
-            setIsLoading(false);
-        }
-    };
+        );
+    }
 
     return (
         <div className={cn('flex flex-col gap-6', className)} {...props}>
@@ -174,7 +178,7 @@ export const SignUpForm = ({
                             <div className='text-center text-sm text-gray-400'>
                                 Déjà un compte ?{' '}
                                 <Link
-                                    href='/auth/signin'
+                                    href='/auth/sign-in'
                                     className='text-purple-400 underline underline-offset-4 hover:text-purple-300'
                                 >
                                     Se connecter
