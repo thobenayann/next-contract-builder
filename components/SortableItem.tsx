@@ -21,7 +21,7 @@ export const SortableItem = ({ id, children }: SortableItemProps) => {
     const style = {
         transform: CSS.Transform.toString(transform),
         transition,
-        opacity: isDragging ? 0.5 : 1,
+        zIndex: isDragging ? 1 : 0,
     };
 
     return (

@@ -1,146 +1,39 @@
 'use client';
 
+import { Pencil, Trash2 } from 'lucide-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-import { Loader2 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-
+import { DeleteConfirmDialog } from '@/components/DeleteConfirmDialog';
+import { DraggableList } from '@/components/DraggableList';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
-
-import { DeleteConfirmDialog } from './DeleteConfirmDialog';
-import { DraggableList } from './DraggableList';
-import { ClausesSkeleton } from './skeletons/ClausesSkeleton';
-
 import type { Clause } from '@prisma/client';
 
 interface ClausesListProps {
     initialClauses: Clause[];
 }
 
-export const ClausesList = ({ initialClauses = [] }: ClausesListProps) => {
-    const router = useRouter();
-    const { toast } = useToast();
+export const ClausesList = ({ initialClauses }: ClausesListProps) => {
     const [clauses, setClauses] = useState<Clause[]>(initialClauses);
-    const [deleteClause, setDeleteClause] = useState<Clause | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const [hasOrderChanged, setHasOrderChanged] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [selectedClause, setSelectedClause] = useState<Clause | null>(null);
+    const router = useRouter();
 
     useEffect(() => {
-        const orderChanged = initialClauses.some((clause, index) => {
-            return clause.id !== clauses[index]?.id;
-        });
-        setHasOrderChanged(orderChanged);
-    }, [clauses, initialClauses]);
+        setClauses(initialClauses);
+    }, [initialClauses]);
 
-    useEffect(() => {
-        const timer = setTimeout(() => setIsLoading(false), 500);
-        return () => clearTimeout(timer);
-    }, []);
-
-    if (isLoading) {
-        return <ClausesSkeleton />;
-    }
-
-    if (initialClauses.length === 0) {
-        return (
-            <div className='text-center p-8 border border-dashed rounded-lg'>
-                <p className='text-muted-foreground'>
-                    Aucune clause n&apos;a encore été créée.
-                </p>
-            </div>
-        );
-    }
-
-    const handleEditClick = (clause: Clause) => {
-        router.push(`/dashboard/clauses/edit/${clause.id}`);
-    };
-
-    const handleDeleteClick = (clause: Clause) => {
-        setDeleteClause(clause);
-    };
-
-    const handleDeleteConfirm = async () => {
-        if (!deleteClause) return;
-        setIsLoading(true);
-
+    const handleReorder = async (newClauses: Clause[]) => {
+        setClauses(newClauses);
         try {
-            const response = await fetch(`/api/clauses/${deleteClause.id}`, {
-                method: 'DELETE',
-            });
-
-            const data = await response.json();
-
-            if (response.status === 409) {
-                toast({
-                    title: 'Suppression impossible',
-                    description: (
-                        <div className='space-y-2'>
-                            <p>{data.message}</p>
-                            <div className='mt-2 space-y-1'>
-                                <p className='font-semibold'>
-                                    Contrats concernés :
-                                </p>
-                                {data.contracts.map((contract: any) => (
-                                    <p
-                                        key={contract.contractId}
-                                        className='text-sm'
-                                    >
-                                        • {contract.employeeName} -
-                                        {new Date(
-                                            contract.startDate
-                                        ).toLocaleDateString('fr-FR')}{' '}
-                                        -
-                                        {contract.contractType === 'CONTRACT'
-                                            ? 'Contrat'
-                                            : 'Avenant'}
-                                    </p>
-                                ))}
-                            </div>
-                        </div>
-                    ),
-                    variant: 'error',
-                    duration: 10000, // Durée plus longue pour laisser le temps de lire
-                });
-                setDeleteClause(null);
-                return;
-            }
-
-            if (!response.ok) {
-                throw new Error('Erreur lors de la suppression');
-            }
-
-            setClauses((prev) => prev.filter((c) => c.id !== deleteClause.id));
-            toast({
-                title: 'Suppression réussie',
-                description: 'La clause a été supprimée avec succès',
-                variant: 'success',
-            });
-            setDeleteClause(null);
-            router.refresh();
-        } catch (error) {
-            console.error('Erreur lors de la suppression:', error);
-            toast({
-                title: 'Erreur',
-                description: 'Impossible de supprimer la clause',
-                variant: 'error',
-            });
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const handleSaveOrder = async () => {
-        if (!hasOrderChanged) return;
-
-        setIsLoading(true);
-        try {
-            const response = await fetch('/api/contracts', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+            const response = await fetch('/api/clauses/reorder', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
                 body: JSON.stringify({
-                    name: 'Nouveau contrat',
-                    clauses: clauses.map((clause, index) => ({
+                    clauses: newClauses.map((clause, index) => ({
                         id: clause.id,
                         order: index,
                     })),
@@ -148,76 +41,93 @@ export const ClausesList = ({ initialClauses = [] }: ClausesListProps) => {
             });
 
             if (!response.ok) {
-                throw new Error('Erreur lors de la sauvegarde');
+                throw new Error('Failed to reorder clauses');
             }
-
-            toast({
-                title: 'Succès',
-                description: "L'ordre des clauses a été sauvegardé",
-                variant: 'success',
-            });
-            router.refresh();
-            setHasOrderChanged(false);
-        } catch (error: unknown) {
-            console.error('Erreur lors de la sauvegarde:', error);
-            toast({
-                title: 'Erreur',
-                description: "Impossible de sauvegarder l'ordre",
-                variant: 'error',
-            });
-        } finally {
-            setIsLoading(false);
+        } catch (error) {
+            console.error('Error reordering clauses:', error);
         }
     };
+
+    const handleEdit = (clause: Clause) => {
+        router.push(`/dashboard/clauses/edit/${clause.id}`);
+    };
+
+    const handleDelete = async (clause: Clause) => {
+        setIsLoading(true);
+        try {
+            const response = await fetch(`/api/clauses/${clause.id}`, {
+                method: 'DELETE',
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to delete clause');
+            }
+
+            setClauses((prev) => prev.filter((c) => c.id !== clause.id));
+            router.refresh();
+        } catch (error) {
+            console.error('Error deleting clause:', error);
+        } finally {
+            setIsLoading(false);
+            setSelectedClause(null);
+        }
+    };
+
+    const renderClause = (clause: Clause) => (
+        <div className='flex items-center justify-between w-full bg-white p-4 rounded-lg shadow-sm'>
+            <h3 className='text-lg font-medium text-gray-900'>
+                {clause.title}
+            </h3>
+            <div className='flex space-x-2'>
+                <Button
+                    variant='ghost'
+                    size='icon'
+                    onClick={() => handleEdit(clause)}
+                    className='text-gray-600 hover:text-blue-600'
+                >
+                    <Pencil className='h-4 w-4' />
+                    <span className='sr-only'>Éditer</span>
+                </Button>
+                <Button
+                    variant='ghost'
+                    size='icon'
+                    onClick={() => setSelectedClause(clause)}
+                    className='text-gray-600 hover:text-red-600'
+                >
+                    <Trash2 className='h-4 w-4' />
+                    <span className='sr-only'>Supprimer</span>
+                </Button>
+            </div>
+        </div>
+    );
 
     return (
         <div className='space-y-4'>
             <div className='flex justify-between items-center'>
-                <h2 className='text-2xl font-bold'>Clauses de contrat</h2>
-                <Button
-                    onClick={() => router.push('/dashboard/clauses/create')}
-                >
-                    Nouvelle clause
-                </Button>
+                <h2 className='text-xl font-semibold'>Liste des clauses</h2>
+                <Link href='/dashboard/clauses/create'>
+                    <Button>Nouvelle clause</Button>
+                </Link>
             </div>
 
-            <DraggableList
-                items={clauses}
-                setItems={(newClauses) => {
-                    setClauses(
-                        newClauses.map((clause) => ({
-                            ...clause,
-                            userId: clause.userId ?? '',
-                        }))
-                    );
-                }}
-                onEdit={handleEditClick}
-                onDelete={handleDeleteClick}
-            />
-            <Button
-                onClick={handleSaveOrder}
-                disabled={isLoading || !hasOrderChanged}
-                className='w-full'
-                variant={hasOrderChanged ? 'default' : 'secondary'}
-            >
-                {isLoading ? (
-                    <>
-                        <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-                        Sauvegarde en cours...
-                    </>
-                ) : hasOrderChanged ? (
-                    "Sauvegarder l'ordre"
-                ) : (
-                    'Aucun changement à sauvegarder'
-                )}
-            </Button>
+            {clauses.length > 0 ? (
+                <DraggableList
+                    items={clauses}
+                    onReorder={handleReorder}
+                    renderItem={renderClause}
+                />
+            ) : (
+                <p className='text-center text-gray-500'>
+                    Aucune clause trouvée.
+                </p>
+            )}
 
             <DeleteConfirmDialog
-                isOpen={!!deleteClause}
-                onClose={() => setDeleteClause(null)}
-                onConfirm={handleDeleteConfirm}
-                title={deleteClause?.title || ''}
+                isOpen={!!selectedClause}
                 isLoading={isLoading}
+                onClose={() => setSelectedClause(null)}
+                onConfirm={() => selectedClause && handleDelete(selectedClause)}
+                title='Supprimer la clause'
             />
         </div>
     );
