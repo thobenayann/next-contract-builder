@@ -93,7 +93,7 @@ const EmployeeForm = (props: {
         try {
             const url = isEditing
                 ? `/api/employees/${searchParams.id}`
-                : '/api/employees';
+                : '/api/employees/create';
             const method = isEditing ? 'PUT' : 'POST';
 
             const response = await fetch(url, {

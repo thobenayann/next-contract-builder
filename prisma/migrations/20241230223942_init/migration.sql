@@ -7,7 +7,6 @@ CREATE TABLE "Employee" (
     "birthdate" TIMESTAMP(3) NOT NULL,
     "nationality" TEXT NOT NULL,
     "ssn" TEXT NOT NULL,
-    "companyId" TEXT NOT NULL,
     "organizationId" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,

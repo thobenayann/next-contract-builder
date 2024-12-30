@@ -96,7 +96,7 @@ export const SignUpForm = ({
             }
 
             toast({
-                title: 'Compte créé avec succès !',
+                title: 'Compte créé avec succès ! 🎉',
                 description: 'Redirection vers le tableau de bord...',
                 variant: 'success',
             });

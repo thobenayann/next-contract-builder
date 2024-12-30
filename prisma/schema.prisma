@@ -15,7 +15,6 @@ model Employee {
   birthdate      DateTime
   nationality    String
   ssn            String
-  companyId      String
   organizationId String
   contract       Contract?
   createdAt      DateTime     @default(now())
