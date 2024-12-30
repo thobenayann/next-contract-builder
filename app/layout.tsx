@@ -23,8 +23,8 @@ const RootLayout = ({ children }: { children: React.ReactNode }) => {
                     <main className='min-h-screen bg-background'>
                         {children}
                     </main>
+                    <Toaster />
                 </ThemeProvider>
-                <Toaster />
             </body>
         </html>
     );
