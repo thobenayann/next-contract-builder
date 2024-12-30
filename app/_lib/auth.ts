@@ -1,11 +1,9 @@
 import { prisma } from '@/app/_lib/db';
-import { EmailTemplate } from '@/components/email-template';
 import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { nextCookies } from 'better-auth/next-js';
-import { Resend } from 'resend';
-
-const resend = new Resend(process.env.RESEND_API_KEY);
+import { organization } from 'better-auth/plugins';
+import { ac, admin, member, owner } from './permissions';
 
 export const auth = betterAuth({
     database: prismaAdapter(prisma, {
@@ -14,27 +12,60 @@ export const auth = betterAuth({
     emailAndPassword: {
         enabled: true,
         autoSignIn: true,
-        sendResetPassword: async ({ user, url, token }, request) => {
-            try {
-                await resend.emails.send({
-                    from: process.env.EMAIL_FROM || 'onboarding@resend.dev',
-                    to: user.email,
-                    subject: 'Réinitialisation de votre mot de passe',
-                    react: EmailTemplate({
-                        magicLink: url,
-                        type: 'reset-password',
-                        user: {
-                            name: user.name || 'Utilisateur',
-                            email: user.email,
+    },
+    plugins: [
+        organization({
+            ac,
+            roles: {
+                owner,
+                admin,
+                member,
+            },
+            allowUserToCreateOrganization: true,
+            organizationLimit: 5,
+            creatorRole: 'owner',
+            membershipLimit: 100,
+        }),
+        nextCookies(),
+    ],
+    databaseHooks: {
+        session: {
+            create: {
+                before: async (session) => {
+                    const user = await prisma.user.findUnique({
+                        where: { id: session.userId },
+                        include: {
+                            organizations: {
+                                include: {
+                                    organization: true,
+                                },
+                            },
                         },
-                    }),
-                });
-                console.log('Reset password email sent successfully');
-            } catch (error) {
-                console.error('Error sending reset password email:', error);
-                throw error;
-            }
+                    });
+
+                    // Utiliser la première organisation comme active si aucune n'est définie
+                    const activeOrganization =
+                        user?.organizations[0]?.organization;
+
+                    if (activeOrganization) {
+                        await prisma.user.update({
+                            where: { id: session.userId },
+                            data: {
+                                activeOrganizationId: activeOrganization.id,
+                            },
+                        });
+
+                        return {
+                            data: {
+                                ...session,
+                                activeOrganizationId: activeOrganization.id,
+                            },
+                        };
+                    }
+
+                    return { data: session };
+                },
+            },
         },
     },
-    plugins: [nextCookies()],
 });

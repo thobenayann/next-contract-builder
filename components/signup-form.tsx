@@ -46,43 +46,52 @@ export const SignUpForm = ({
             name: '',
             email: '',
             password: '',
+            organization: {
+                name: '',
+            },
         },
     });
 
     async function onSubmit(values: SignUpInput) {
         setIsLoading(true);
-        const { name, email, password } = values;
-        const { data, error } = await authClient.signUp.email(
-            {
+        const { name, email, password, organization } = values;
+
+        try {
+            const signUpResult = await authClient.signUp.email({
                 email,
                 password,
                 name,
-                callbackURL: '/auth/sign-in',
-            },
-            {
-                onRequest: () => {
-                    setIsLoading(true);
-                },
-                onSuccess: () => {
-                    form.reset();
-                    setIsLoading(false);
-                    toast({
-                        title: 'Compte créé avec succès ! 🎉',
-                        description: 'Vous pouvez maintenant vous connecter',
-                        variant: 'success',
-                    });
-                    router.push('/auth/sign-in');
-                },
-                onError: (ctx) => {
-                    toast({ title: ctx.error.message, variant: 'error' });
-                    form.setError('email', {
-                        type: 'manual',
-                        message: ctx.error.message,
-                    });
-                    setIsLoading(false);
-                },
+                callbackURL: `/dashboard?org=${encodeURIComponent(
+                    organization.name
+                )}`,
+            });
+
+            if (signUpResult.error) {
+                throw new Error(signUpResult.error.message);
             }
-        );
+
+            form.reset();
+            toast({
+                title: 'Compte créé avec succès ! 🎉',
+                description: 'Redirection vers le tableau de bord...',
+                variant: 'success',
+            });
+            router.push(
+                `/dashboard?org=${encodeURIComponent(organization.name)}`
+            );
+        } catch (error) {
+            console.error('Erreur:', error);
+            toast({
+                title: 'Erreur',
+                description:
+                    error instanceof Error
+                        ? error.message
+                        : "Une erreur s'est produite",
+                variant: 'error',
+            });
+        } finally {
+            setIsLoading(false);
+        }
     }
 
     return (
@@ -154,6 +163,25 @@ export const SignUpForm = ({
                                                 {...field}
                                                 type='password'
                                                 placeholder='********'
+                                                className='border-white/10 bg-white/5 text-white placeholder:text-gray-500'
+                                            />
+                                        </FormControl>
+                                        <FormMessage className='text-red-400' />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name='organization.name'
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className='text-gray-300'>
+                                            Nom de votre organisation
+                                        </FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                {...field}
+                                                placeholder='Acme Inc.'
                                                 className='border-white/10 bg-white/5 text-white placeholder:text-gray-500'
                                             />
                                         </FormControl>

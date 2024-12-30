@@ -11,10 +11,13 @@ import {
 
 interface EmailTemplateProps {
     magicLink: string;
-    type?: 'reset-password' | 'verify-email';
+    type?: 'reset-password' | 'verify-email' | 'organization-invitation';
     user?: {
         name: string;
         email: string;
+    };
+    organization?: {
+        name: string;
     };
 }
 
@@ -22,18 +25,31 @@ export const EmailTemplate = ({
     magicLink,
     type = 'verify-email',
     user,
+    organization,
 }: EmailTemplateProps) => {
-    const isResetPassword = type === 'reset-password';
-    const previewText = isResetPassword
-        ? 'Réinitialisez votre mot de passe'
-        : 'Vérifiez votre adresse email';
-    const title = isResetPassword ? `Bonjour ${user?.name},` : 'Bienvenue !';
-    const description = isResetPassword
-        ? 'Vous avez demandé à réinitialiser votre mot de passe. Cliquez sur le bouton ci-dessous pour procéder au changement.'
-        : 'Cliquez sur le bouton ci-dessous pour vérifier votre adresse email.';
-    const buttonText = isResetPassword
-        ? 'Réinitialiser le mot de passe'
-        : 'Vérifier mon email';
+    let previewText, title, description, buttonText;
+
+    switch (type) {
+        case 'reset-password':
+            previewText = 'Réinitialisez votre mot de passe';
+            title = `Bonjour ${user?.name},`;
+            description =
+                'Vous avez demandé à réinitialiser votre mot de passe. Cliquez sur le bouton ci-dessous pour procéder au changement.';
+            buttonText = 'Réinitialiser le mot de passe';
+            break;
+        case 'organization-invitation':
+            previewText = 'Invitation à rejoindre une organisation';
+            title = `Bonjour,`;
+            description = `${user?.name} vous invite à rejoindre l'organisation "${organization?.name}" sur Acme Inc. Cliquez sur le bouton ci-dessous pour accepter l'invitation.`;
+            buttonText = "Accepter l'invitation";
+            break;
+        default:
+            previewText = 'Vérifiez votre adresse email';
+            title = 'Bienvenue !';
+            description =
+                'Cliquez sur le bouton ci-dessous pour vérifier votre adresse email.';
+            buttonText = 'Vérifier mon email';
+    }
 
     return (
         <Html>
@@ -48,8 +64,10 @@ export const EmailTemplate = ({
                             {buttonText}
                         </Button>
                         <Text style={paragraph}>
-                            {isResetPassword
+                            {type === 'reset-password'
                                 ? "Si vous n'avez pas demandé à réinitialiser votre mot de passe, vous pouvez ignorer cet email."
+                                : type === 'organization-invitation'
+                                ? "Si vous n'avez pas demandé à rejoindre cette organisation, vous pouvez ignorer cet email."
                                 : "Si vous n'avez pas demandé cette vérification, vous pouvez ignorer cet email."}
                         </Text>
                     </Section>

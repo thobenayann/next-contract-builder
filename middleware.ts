@@ -25,20 +25,33 @@ export default async function middleware(request: NextRequest) {
         }
     );
 
-    if (protectedRoutes.includes(path) && !session) {
-        if (path !== '/auth/sign-in') {
-            return NextResponse.redirect(
-                new URL('/auth/sign-in', request.nextUrl)
-            );
+    // Vérifier si l'utilisateur vient de s'inscrire et n'a pas d'organisation
+    if (path === '/dashboard' && session && !session.activeOrganizationId) {
+        const searchParams = new URLSearchParams(request.nextUrl.search);
+        const orgName = searchParams.get('org');
+
+        if (orgName) {
+            // Créer l'organisation via l'API Better Auth
+            await betterFetch('/api/auth/organization/create', {
+                method: 'POST',
+                baseURL,
+                headers: {
+                    cookie: request.headers.get('cookie') || '',
+                },
+                body: {
+                    name: orgName,
+                    slug: orgName.toLowerCase().replace(/\s+/g, '-'),
+                },
+            });
         }
     }
 
+    if (protectedRoutes.includes(path) && !session) {
+        return NextResponse.redirect(new URL('/auth/sign-in', request.nextUrl));
+    }
+
     if (publicRoutes.includes(path) && session) {
-        if (path !== '/dashboard') {
-            return NextResponse.redirect(
-                new URL('/dashboard', request.nextUrl)
-            );
-        }
+        return NextResponse.redirect(new URL('/dashboard', request.nextUrl));
     }
 
     return NextResponse.next();

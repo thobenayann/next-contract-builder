@@ -6,7 +6,6 @@ import {
     CollapsibleTrigger,
 } from '@radix-ui/react-collapsible';
 import {
-    Building2,
     ChevronDown,
     FilePlus,
     FileStack,
@@ -20,16 +19,10 @@ import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 
 import { cn } from '@/app/_lib/utils';
-import { Button } from '@/components/ui/button';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { NavUser } from '@/components/ui/nav-user';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { User } from '@prisma/client';
+import { OrganizationSwitcher } from './organization-switcher';
 
 interface SubmenuItem {
     title: string;
@@ -116,8 +109,8 @@ const mainNav: MainNavItem[] = [
 ];
 
 export const AppSidebarClient = ({ userSession }: AppSidebarClientProps) => {
+    const [isCollapsed, setIsCollapsed] = useState(false);
     const pathname = usePathname();
-    const [isCollapsed] = useState(false);
 
     const NavLink = ({ item }: { item: (typeof mainNav)[0] }) => {
         if (item.submenu) {
@@ -176,39 +169,11 @@ export const AppSidebarClient = ({ userSession }: AppSidebarClientProps) => {
     };
 
     return (
-        <div
-            className={cn(
-                'fixed top-0 left-0 z-40 h-full border-r bg-background',
-                isCollapsed ? 'w-[60px]' : 'w-[200px]'
-            )}
-        >
+        <div className='fixed inset-y-0 z-50 flex w-[200px] flex-col'>
             <SidebarProvider>
-                <div className='flex h-full flex-col'>
-                    <div className='flex h-14 items-center justify-between border-b px-3 py-2'>
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button
-                                    variant='ghost'
-                                    className='flex items-center gap-2 w-full justify-start'
-                                >
-                                    <Building2 className='h-4 w-4' />
-                                    {!isCollapsed && (
-                                        <>
-                                            <span>Entreprise</span>
-                                            <ChevronDown className='ml-auto h-4 w-4' />
-                                        </>
-                                    )}
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent
-                                align='start'
-                                className='w-[--radix-dropdown-menu-trigger-width]'
-                            >
-                                <DropdownMenuItem>
-                                    <span>Entreprise actuelle</span>
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
+                <div className='flex h-full flex-1 flex-col border-r bg-background'>
+                    <div className='p-2'>
+                        <OrganizationSwitcher />
                     </div>
 
                     <nav className='flex-1 space-y-1 p-2'>

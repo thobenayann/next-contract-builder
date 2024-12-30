@@ -14,6 +14,18 @@ export const signUpSchema = z.object({
         .string()
         .min(6, 'Le mot de passe doit contenir au moins 6 caractères')
         .max(50, 'Le mot de passe ne peut pas dépasser 50 caractères'),
+    organization: z.object({
+        name: z
+            .string()
+            .min(
+                2,
+                "Le nom de l'organisation doit contenir au moins 2 caractères"
+            )
+            .max(
+                50,
+                "Le nom de l'organisation ne peut pas dépasser 50 caractères"
+            ),
+    }),
 });
 
 export type SignUpInput = z.infer<typeof signUpSchema>;
