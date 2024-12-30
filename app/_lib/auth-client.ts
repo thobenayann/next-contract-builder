@@ -4,7 +4,7 @@ import { ac, admin, member, owner } from './permissions';
 
 export const authClient = createAuthClient({
     baseURL: process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000',
-    endpoint: '/api/auth/better-auth',
+    endpoint: '/api/auth',
     plugins: [
         organizationClient({
             ac,

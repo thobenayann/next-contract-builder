@@ -28,44 +28,4 @@ export const auth = betterAuth({
         }),
         nextCookies(),
     ],
-    databaseHooks: {
-        session: {
-            create: {
-                before: async (session) => {
-                    const user = await prisma.user.findUnique({
-                        where: { id: session.userId },
-                        include: {
-                            organizations: {
-                                include: {
-                                    organization: true,
-                                },
-                            },
-                        },
-                    });
-
-                    // Utiliser la première organisation comme active si aucune n'est définie
-                    const activeOrganization =
-                        user?.organizations[0]?.organization;
-
-                    if (activeOrganization) {
-                        await prisma.user.update({
-                            where: { id: session.userId },
-                            data: {
-                                activeOrganizationId: activeOrganization.id,
-                            },
-                        });
-
-                        return {
-                            data: {
-                                ...session,
-                                activeOrganizationId: activeOrganization.id,
-                            },
-                        };
-                    }
-
-                    return { data: session };
-                },
-            },
-        },
-    },
 });

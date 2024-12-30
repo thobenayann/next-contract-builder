@@ -15,6 +15,8 @@ export async function GET() {
 
         const { session } = sessionData;
 
+        console.log('SESSION', session);
+
         const [activeOrg, organizations] = await Promise.all([
             session.activeOrganizationId
                 ? prisma.organization.findFirst({

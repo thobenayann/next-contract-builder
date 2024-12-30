@@ -1,6 +1,5 @@
 'use client';
 
-import { authClient } from '@/app/_lib/auth-client';
 import { cn } from '@/app/_lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Organization } from '@prisma/client';
@@ -11,6 +10,7 @@ import { Button } from './ui/button';
 import {
     Dialog,
     DialogContent,
+    DialogDescription,
     DialogHeader,
     DialogTitle,
     DialogTrigger,
@@ -31,6 +31,7 @@ export const OrganizationSwitcher = () => {
     const [activeOrg, setActiveOrg] = useState<Organization | null>(null);
     const [organizations, setOrganizations] = useState<Organization[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
 
     useEffect(() => {
         const loadOrganizations = async () => {
@@ -56,35 +57,38 @@ export const OrganizationSwitcher = () => {
 
         try {
             setIsCreating(true);
-            const result = await authClient.organization.create({
-                name: newOrgName,
-                slug: newOrgName.toLowerCase().replace(/\s+/g, '-'),
+            const slug = newOrgName.toLowerCase().replace(/\s+/g, '-');
+
+            // Créer l'organisation via l'API
+            const response = await fetch('/api/organizations/create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    name: newOrgName,
+                    slug,
+                }),
             });
 
-            if (result.error) {
-                throw new Error(result.error.message);
+            if (!response.ok) {
+                throw new Error('Erreur lors de la création');
             }
 
-            const now = new Date();
-            const newOrg: Organization = {
-                id: result.data.id,
-                name: result.data.name,
-                slug: result.data.slug,
-                metadata: result.data.metadata ?? null,
-                createdAt: new Date(result.data.createdAt),
-                updatedAt: now,
-                logo: result.data.logo ?? null,
-            };
+            const data = await response.json();
+            const newOrg: Organization = data.organization;
 
+            // Mettre à jour l'UI
             setOrganizations((prev) => [...prev, newOrg]);
             setActiveOrg(newOrg);
+            setIsDialogOpen(false);
+            setNewOrgName('');
 
             toast({
                 title: 'Succès',
                 description: 'Organisation créée avec succès',
                 variant: 'success',
             });
-            setNewOrgName('');
             router.refresh();
         } catch (error) {
             toast({
@@ -102,12 +106,16 @@ export const OrganizationSwitcher = () => {
 
     const handleSwitchOrganization = async (organizationId: string) => {
         try {
-            const result = await authClient.organization.setActive({
-                organizationId,
+            const response = await fetch('/api/organizations/set-active', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ organizationId }),
             });
 
-            if (result.error) {
-                throw new Error(result.error.message);
+            if (!response.ok) {
+                throw new Error("Impossible de changer d'organisation");
             }
 
             const newActiveOrg = organizations.find(
@@ -170,9 +178,11 @@ export const OrganizationSwitcher = () => {
                             )}
                         </DropdownMenuItem>
                     ))}
-                    <Dialog>
+                    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                         <DialogTrigger asChild>
-                            <DropdownMenuItem>
+                            <DropdownMenuItem
+                                onSelect={(e) => e.preventDefault()}
+                            >
                                 <Plus className='h-4 w-4 mr-2' />
                                 Nouvelle organisation
                             </DropdownMenuItem>
@@ -182,6 +192,10 @@ export const OrganizationSwitcher = () => {
                                 <DialogTitle>
                                     Créer une nouvelle organisation
                                 </DialogTitle>
+                                <DialogDescription>
+                                    Ajoutez une nouvelle organisation à votre
+                                    compte.
+                                </DialogDescription>
                             </DialogHeader>
                             <div className='space-y-4'>
                                 <Input

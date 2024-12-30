@@ -1,9 +1,11 @@
 import { betterFetch } from '@better-fetch/fetch';
-import { Session } from 'better-auth';
 import { NextRequest, NextResponse } from 'next/server';
+import { auth } from './app/_lib/auth';
 
 const protectedRoutes = ['/dashboard'];
 const publicRoutes = ['/auth/sign-in', '/auth/sign-up', '/'];
+
+type Session = typeof auth.$Infer.Session;
 
 export default async function middleware(request: NextRequest) {
     const path = request.nextUrl.pathname;
@@ -13,8 +15,7 @@ export default async function middleware(request: NextRequest) {
         return NextResponse.next();
     }
 
-    const baseURL = request.nextUrl.origin || 'http://localhost:3000';
-
+    const baseURL = request.nextUrl.origin;
     const { data: session } = await betterFetch<Session>(
         '/api/auth/get-session',
         {
@@ -24,27 +25,6 @@ export default async function middleware(request: NextRequest) {
             },
         }
     );
-
-    // Vérifier si l'utilisateur vient de s'inscrire et n'a pas d'organisation
-    if (path === '/dashboard' && session && !session.activeOrganizationId) {
-        const searchParams = new URLSearchParams(request.nextUrl.search);
-        const orgName = searchParams.get('org');
-
-        if (orgName) {
-            // Créer l'organisation via l'API Better Auth
-            await betterFetch('/api/auth/organization/create', {
-                method: 'POST',
-                baseURL,
-                headers: {
-                    cookie: request.headers.get('cookie') || '',
-                },
-                body: {
-                    name: orgName,
-                    slug: orgName.toLowerCase().replace(/\s+/g, '-'),
-                },
-            });
-        }
-    }
 
     if (protectedRoutes.includes(path) && !session) {
         return NextResponse.redirect(new URL('/auth/sign-in', request.nextUrl));

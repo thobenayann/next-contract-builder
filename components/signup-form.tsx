@@ -52,35 +52,58 @@ export const SignUpForm = ({
         },
     });
 
-    async function onSubmit(values: SignUpInput) {
-        setIsLoading(true);
-        const { name, email, password, organization } = values;
-
+    const onSubmit = async (data: SignUpInput) => {
         try {
+            setIsLoading(true);
+
+            // Inscription de l'utilisateur
             const signUpResult = await authClient.signUp.email({
-                email,
-                password,
-                name,
-                callbackURL: `/dashboard?org=${encodeURIComponent(
-                    organization.name
-                )}`,
+                email: data.email,
+                password: data.password,
+                name: data.name,
             });
 
             if (signUpResult.error) {
                 throw new Error(signUpResult.error.message);
             }
 
-            form.reset();
+            // Se connecter après l'inscription
+            const signInResult = await authClient.signIn.email({
+                email: data.email,
+                password: data.password,
+            });
+
+            if (signInResult.error) {
+                throw new Error(signInResult.error.message);
+            }
+
+            // Créer l'organisation via l'API
+            const response = await fetch('/api/organizations/create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    name: data.organization.name,
+                    slug: data.organization.name
+                        .toLowerCase()
+                        .replace(/\s+/g, '-'),
+                }),
+            });
+
+            if (!response.ok) {
+                throw new Error("Erreur lors de la création de l'organisation");
+            }
+
             toast({
-                title: 'Compte créé avec succès ! 🎉',
+                title: 'Compte créé avec succès !',
                 description: 'Redirection vers le tableau de bord...',
                 variant: 'success',
             });
-            router.push(
-                `/dashboard?org=${encodeURIComponent(organization.name)}`
-            );
+
+            router.push('/dashboard');
         } catch (error) {
-            console.error('Erreur:', error);
+            setIsLoading(false);
             toast({
                 title: 'Erreur',
                 description:
@@ -89,10 +112,8 @@ export const SignUpForm = ({
                         : "Une erreur s'est produite",
                 variant: 'error',
             });
-        } finally {
-            setIsLoading(false);
         }
-    }
+    };
 
     return (
         <div className={cn('flex flex-col gap-6', className)} {...props}>
