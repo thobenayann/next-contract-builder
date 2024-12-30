@@ -31,3 +31,18 @@ export const signInSchema = z.object({
 });
 
 export type SignInInput = z.infer<typeof signInSchema>;
+
+export const resetPasswordSchema = z
+    .object({
+        newPassword: z
+            .string()
+            .min(8, 'Le mot de passe doit contenir au moins 8 caractères')
+            .max(32, 'Le mot de passe ne doit pas dépasser 32 caractères'),
+        confirmPassword: z.string(),
+    })
+    .refine((data) => data.newPassword === data.confirmPassword, {
+        message: 'Les mots de passe ne correspondent pas',
+        path: ['confirmPassword'],
+    });
+
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;

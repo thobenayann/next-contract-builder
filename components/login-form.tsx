@@ -132,6 +132,14 @@ export const LoginForm = ({
                                     </FormItem>
                                 )}
                             />
+                            <div className='flex items-center justify-between'>
+                                <Link
+                                    href='/auth/forgot-password'
+                                    className='text-sm text-muted-foreground hover:text-primary'
+                                >
+                                    Mot de passe oublié ?
+                                </Link>
+                            </div>
                             <Button
                                 type='submit'
                                 className='w-full bg-purple-500 hover:bg-purple-600'
