@@ -1,12 +1,21 @@
 import { NextResponse } from 'next/server';
 
-import { prisma } from '@/lib/db';
-import type { ContractFormData } from '@/lib/types';
-import { contractSchema } from '@/lib/validations/schemas/contract.schema';
+import { prisma } from '@/app/_lib/db';
+import { getSession } from '@/app/_lib/session';
+import type { ContractFormData } from '@/app/_lib/types';
+import { contractSchema } from '@/app/_lib/validations/schemas/contract.schema';
 
 export async function POST(request: Request) {
     try {
         const data = (await request.json()) as ContractFormData;
+        const session = await getSession();
+
+        if (!session) {
+            return NextResponse.json(
+                { error: 'Session non trouvée' },
+                { status: 401 }
+            );
+        }
 
         // Validation avec Zod
         const validationResult = contractSchema.safeParse(data);
@@ -24,6 +33,7 @@ export async function POST(request: Request) {
         // Créer le contrat
         const contract = await prisma.contract.create({
             data: {
+                userId: session?.userId,
                 type: data.type,
                 startDate: new Date(data.startDate),
                 endDate: data.endDate ? new Date(data.endDate) : null,

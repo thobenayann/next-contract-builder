@@ -7,7 +7,7 @@ import {
     TextRun,
 } from 'docx';
 
-import type { ContractWithRelations } from '@/lib/types';
+import type { ContractWithRelations } from '@/app/_lib/types';
 
 interface TipTapContent {
     type: string;

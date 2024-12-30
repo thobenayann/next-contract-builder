@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
-import { prisma } from '@/lib/db';
-import { DocumentService } from '@/lib/services/document.service';
+import { prisma } from '@/app/_lib/db';
+import { DocumentService } from '@/app/_lib/services/document.service';
 
 export async function GET(
     _request: Request,

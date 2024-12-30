@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { GENDERS } from '@/lib/constants';
+import { GENDERS } from '@/app/_lib/constants';
 
 export const employeeSchema = z.object({
     firstName: z

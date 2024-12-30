@@ -7,6 +7,12 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 
+import { authClient } from '@/app/_lib/auth-client';
+import { cn } from '@/app/_lib/utils';
+import {
+    SignUpInput,
+    signUpSchema,
+} from '@/app/_lib/validations/schemas/auth.schema';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -25,12 +31,6 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { authClient } from '@/lib/auth-client';
-import { cn } from '@/lib/utils';
-import {
-    SignUpInput,
-    signUpSchema,
-} from '@/lib/validations/schemas/auth.schema';
 
 export const SignUpForm = ({
     className,

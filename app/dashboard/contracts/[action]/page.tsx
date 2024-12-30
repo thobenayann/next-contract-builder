@@ -6,6 +6,11 @@ import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Controller, useForm } from 'react-hook-form';
 
+import { DOCUMENT_TYPES, DOCUMENT_TYPES_LABELS } from '@/app/_lib/constants';
+import {
+    contractResolver,
+    type ContractFormData,
+} from '@/app/_lib/validations';
 import { ClauseSelector } from '@/components/ClauseSelector';
 import { DraggableList } from '@/components/DraggableList';
 import { ContractFormSkeleton } from '@/components/skeletons/ContractFormSkeleton';
@@ -20,8 +25,6 @@ import {
 } from '@/components/ui/select';
 import { PageTransition } from '@/components/ui/transition';
 import { useToast } from '@/hooks/use-toast';
-import { DOCUMENT_TYPES, DOCUMENT_TYPES_LABELS } from '@/lib/constants';
-import { contractResolver, type ContractFormData } from '@/lib/validations';
 
 import type { Clause } from '@prisma/client';
 

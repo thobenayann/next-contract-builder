@@ -2,11 +2,11 @@ import { Suspense } from 'react';
 
 import Link from 'next/link';
 
+import { prisma } from '@/app/_lib/db';
 import { ContractsList } from '@/components/ContractsList';
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/ui/loading';
 import { PageTransition } from '@/components/ui/transition';
-import { prisma } from '@/lib/db';
 
 const ContractsPage = async () => {
     const [contracts, employeesCount] = await Promise.all([

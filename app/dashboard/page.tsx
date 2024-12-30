@@ -1,13 +1,20 @@
 import { Suspense } from 'react';
 
+import { prisma } from '@/app/_lib/db';
+import { getUserSession } from '@/app/_lib/getUserSession';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LoadingSpinner } from '@/components/ui/loading';
 import { PageTransition } from '@/components/ui/transition';
-import { prisma } from '@/lib/db';
+import { redirect } from 'next/navigation';
 
 const DashboardPage = async () => {
     const clausesCount = await prisma.clause.count();
     const contractsCount = await prisma.contract.count();
+    const userSession = await getUserSession();
+
+    if (!userSession) {
+        return redirect('/auth/sign-in');
+    }
 
     return (
         <PageTransition>

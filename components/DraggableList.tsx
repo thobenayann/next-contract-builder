@@ -17,7 +17,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Pencil, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
-import type { DraggableClause } from '@/lib/types';
+import type { DraggableClause } from '@/app/_lib/types';
 
 import { SortableItem } from './SortableItem';
 import { Button } from './ui/button';

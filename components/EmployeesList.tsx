@@ -7,6 +7,7 @@ import { fr } from 'date-fns/locale';
 import { FileText, Pencil, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
+import type { EmployeeWithContract } from '@/app/_lib/types';
 import { Button } from '@/components/ui/button';
 import {
     Table,
@@ -17,7 +18,6 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import type { EmployeeWithContract } from '@/lib/types';
 
 import { DeleteConfirmDialog } from './DeleteConfirmDialog';
 import { EmployeesSkeleton } from './skeletons/EmployeesSkeleton';

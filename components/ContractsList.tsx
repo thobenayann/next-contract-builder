@@ -7,6 +7,8 @@ import { fr } from 'date-fns/locale';
 import { Download, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
+import { DOCUMENT_TYPES_LABELS } from '@/app/_lib/constants';
+import type { ContractWithRelations } from '@/app/_lib/types';
 import { Button } from '@/components/ui/button';
 import {
     Table,
@@ -17,8 +19,6 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { DOCUMENT_TYPES_LABELS } from '@/lib/constants';
-import type { ContractWithRelations } from '@/lib/types';
 
 import { DeleteConfirmDialog } from './DeleteConfirmDialog';
 

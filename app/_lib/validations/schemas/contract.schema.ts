@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { DOCUMENT_TYPES } from '@/lib/constants';
+import { DOCUMENT_TYPES } from '@/app/_lib/constants';
 
 export const contractSchema = z.object({
     type: z.enum([DOCUMENT_TYPES.CONTRACT, DOCUMENT_TYPES.AMENDMENT], {

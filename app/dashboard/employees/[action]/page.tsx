@@ -6,6 +6,11 @@ import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Controller, useForm } from 'react-hook-form';
 
+import { GENDERS, GENDER_LABELS } from '@/app/_lib/constants';
+import {
+    employeeResolver,
+    type EmployeeFormData,
+} from '@/app/_lib/validations';
 import { EmployeeFormSkeleton } from '@/components/skeletons/EmployeeFormSkeleton';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,8 +23,6 @@ import {
 } from '@/components/ui/select';
 import { PageTransition } from '@/components/ui/transition';
 import { useToast } from '@/hooks/use-toast';
-import { GENDERS, GENDER_LABELS } from '@/lib/constants';
-import { employeeResolver, type EmployeeFormData } from '@/lib/validations';
 
 const EmployeeForm = (props: {
     params: Promise<{ action: string }>;

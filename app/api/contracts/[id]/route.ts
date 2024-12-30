@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
-import { prisma } from '@/lib/db';
-import { ContractFormData } from '@/lib/validations/schemas/contract.schema';
+import { prisma } from '@/app/_lib/db';
+import { ContractFormData } from '@/app/_lib/validations/schemas/contract.schema';
 
 export async function GET(
     _request: Request,
