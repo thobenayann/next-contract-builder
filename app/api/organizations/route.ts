@@ -15,29 +15,54 @@ export async function GET() {
 
         const { session } = sessionData;
 
-        console.log('SESSION', session);
+        // Récupérer l'utilisateur avec son organisation active
+        const user = await prisma.user.findUnique({
+            where: { id: session.userId },
+            include: {
+                activeOrganization: true,
+            },
+        });
 
-        const [activeOrg, organizations] = await Promise.all([
-            session.activeOrganizationId
-                ? prisma.organization.findFirst({
-                      where: {
-                          id: session.activeOrganizationId,
-                          members: {
-                              some: { userId: session.userId },
-                          },
-                      },
-                  })
-                : null,
-            prisma.organization.findMany({
+        // Si l'utilisateur n'a pas d'organisation active mais a des organisations,
+        // définir la première comme active
+        if (!user?.activeOrganizationId) {
+            const firstOrg = await prisma.organization.findFirst({
                 where: {
                     members: {
                         some: { userId: session.userId },
                     },
                 },
-            }),
-        ]);
+            });
 
-        return NextResponse.json({ activeOrg, organizations });
+            if (firstOrg) {
+                await Promise.all([
+                    // Mettre à jour l'utilisateur
+                    prisma.user.update({
+                        where: { id: session.userId },
+                        data: { activeOrganizationId: firstOrg.id },
+                    }),
+                    // Mettre à jour la session
+                    prisma.session.update({
+                        where: { id: session.id },
+                        data: { activeOrganizationId: firstOrg.id },
+                    }),
+                ]);
+            }
+        }
+
+        // Récupérer toutes les organisations de l'utilisateur
+        const organizations = await prisma.organization.findMany({
+            where: {
+                members: {
+                    some: { userId: session.userId },
+                },
+            },
+        });
+
+        return NextResponse.json({
+            activeOrg: user?.activeOrganization || organizations[0] || null,
+            organizations,
+        });
     } catch (error) {
         console.error('Error fetching organizations:', error);
         return NextResponse.json(
