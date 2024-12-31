@@ -124,7 +124,7 @@ export const EmployeesList = ({
                                             onClick={() => {
                                                 if (employee.contract) {
                                                     router.push(
-                                                        `/dashboard/contracts/${employee.contract.id}`
+                                                        `/dashboard/contracts/view/${employee.contract.id}`
                                                     );
                                                 }
                                             }}
@@ -138,7 +138,7 @@ export const EmployeesList = ({
                                             size='sm'
                                             onClick={() =>
                                                 router.push(
-                                                    `/dashboard/contracts/create?employeeId=${employee.id}`
+                                                    `/dashboard/contracts/create/${employee.id}`
                                                 )
                                             }
                                         >

@@ -22,6 +22,7 @@ interface DraggableListProps {
     onDelete: (item: Clause) => void;
     isFormContext?: boolean;
     preventRefresh?: boolean;
+    disabled?: boolean;
 }
 
 export const DraggableList = ({
@@ -31,6 +32,7 @@ export const DraggableList = ({
     onDelete,
     isFormContext = false,
     preventRefresh = false,
+    disabled = false,
 }: DraggableListProps) => {
     const sensors = useSensors(
         useSensor(PointerSensor),

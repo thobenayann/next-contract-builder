@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -42,12 +42,15 @@ interface ContractClause {
     clause: Clause;
 }
 
-const ContractForm = (props: {
-    params: Promise<{ action: string }>;
-    searchParams: Promise<{ id?: string; employeeId?: string }>;
-}) => {
-    const searchParams = use(props.searchParams);
-    const params = use(props.params);
+interface Props {
+    params: { action: string };
+    searchParams: {
+        id?: string;
+        employeeId?: string;
+    };
+}
+
+const ContractForm = ({ params, searchParams }: Props) => {
     const router = useRouter();
     const { toast } = useToast();
     const [isLoading] = useState(false);
@@ -77,12 +80,16 @@ const ContractForm = (props: {
     const isEditing = params.action === 'edit';
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    // Déterminer si le formulaire est en mode vue
+    const isViewMode = params.action === 'view';
+
     // Charger les clauses et les employés disponibles
     useEffect(() => {
         Promise.all([
             fetch('/api/clauses').then((res) => res.json()),
             fetch('/api/employees').then((res) => res.json()),
-            isEditing && searchParams.id
+            (params.action === 'view' || params.action === 'edit') &&
+            searchParams.id
                 ? fetch(`/api/contracts/${searchParams.id}`).then((res) =>
                       res.json()
                   )
@@ -100,8 +107,7 @@ const ContractForm = (props: {
                 );
                 setEmployees(employees);
 
-                if (contract) {
-                    // Pré-remplir le formulaire avec les données du contrat
+                if (contract && (isViewMode || isEditing)) {
                     setValue('type', contract.type);
                     setValue(
                         'startDate',
@@ -132,7 +138,7 @@ const ContractForm = (props: {
             .finally(() => {
                 setIsInitialLoading(false);
             });
-    }, [isEditing, searchParams.id, setValue, setError]);
+    }, [params.action, searchParams.id, setValue, isViewMode, isEditing]);
 
     const onSubmit = async (data: ContractFormData) => {
         setIsSubmitting(true);
@@ -243,17 +249,33 @@ const ContractForm = (props: {
             <div className='container mx-auto p-4 max-w-4xl'>
                 <div className='flex justify-between items-center mb-6'>
                     <h1 className='text-2xl font-bold'>
-                        {isEditing
+                        {isViewMode
+                            ? 'Détails du contrat'
+                            : isEditing
                             ? 'Modifier le contrat'
                             : 'Créer un nouveau contrat'}
                     </h1>
-                    <Button
-                        variant='outline'
-                        onClick={() => router.push('/dashboard/contracts')}
-                    >
-                        Retour
-                    </Button>
+                    <div className='space-x-4'>
+                        {isViewMode && (
+                            <Button
+                                onClick={() =>
+                                    router.push(
+                                        `/dashboard/contracts/edit/${searchParams.id}`
+                                    )
+                                }
+                            >
+                                Modifier
+                            </Button>
+                        )}
+                        <Button
+                            variant='outline'
+                            onClick={() => router.push('/dashboard/contracts')}
+                        >
+                            Retour
+                        </Button>
+                    </div>
                 </div>
+
                 <form onSubmit={handleSubmit(onSubmit)} className='space-y-6'>
                     <div className='grid grid-cols-2 gap-4'>
                         <div className='space-y-2'>
@@ -266,20 +288,18 @@ const ContractForm = (props: {
                             <Controller
                                 name='type'
                                 control={control}
-                                render={({ field, fieldState: { error } }) => (
-                                    <>
-                                        <Select
-                                            onValueChange={field.onChange}
-                                            value={field.value}
-                                            disabled={isLoading}
-                                        >
-                                            <SelectTrigger>
-                                                <SelectValue placeholder='Sélectionner' />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {Object.entries(
-                                                    DOCUMENT_TYPES
-                                                ).map(([key, value]) => (
+                                render={({ field }) => (
+                                    <Select
+                                        onValueChange={field.onChange}
+                                        value={field.value}
+                                        disabled={isViewMode}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder='Sélectionner' />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {Object.entries(DOCUMENT_TYPES).map(
+                                                ([key, value]) => (
                                                     <SelectItem
                                                         key={key}
                                                         value={value}
@@ -290,15 +310,10 @@ const ContractForm = (props: {
                                                             ]
                                                         }
                                                     </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        {error && (
-                                            <p className='text-sm text-red-500'>
-                                                {error.message}
-                                            </p>
-                                        )}
-                                    </>
+                                                )
+                                            )}
+                                        </SelectContent>
+                                    </Select>
                                 )}
                             />
                         </div>
@@ -315,7 +330,9 @@ const ContractForm = (props: {
                                 onValueChange={(value) =>
                                     setValue('employeeId', value)
                                 }
-                                disabled={!!searchParams.employeeId}
+                                disabled={
+                                    isViewMode || !!searchParams.employeeId
+                                }
                             >
                                 <SelectTrigger>
                                     <SelectValue placeholder='Sélectionner un employé' />
@@ -345,6 +362,7 @@ const ContractForm = (props: {
                                 id='startDate'
                                 type='date'
                                 {...register('startDate')}
+                                disabled={isViewMode}
                                 required
                             />
                         </div>
@@ -360,6 +378,7 @@ const ContractForm = (props: {
                                 id='endDate'
                                 type='date'
                                 {...register('endDate')}
+                                disabled={isViewMode}
                             />
                         </div>
                     </div>
@@ -369,18 +388,20 @@ const ContractForm = (props: {
                             <h3 className='text-lg font-medium'>
                                 Clauses du contrat
                             </h3>
-                            <ClauseSelector
-                                availableClauses={availableClauses}
-                                selectedClauses={watch('selectedClauses').map(
-                                    (clause) => ({
+                            {!isViewMode && (
+                                <ClauseSelector
+                                    availableClauses={availableClauses}
+                                    selectedClauses={watch(
+                                        'selectedClauses'
+                                    ).map((clause) => ({
                                         ...clause,
                                         createdAt: new Date(clause.createdAt),
                                         updatedAt: new Date(clause.updatedAt),
                                         userId: clause.userId || '',
-                                    })
-                                )}
-                                onSelect={handleClauseSelect}
-                            />
+                                    }))}
+                                    onSelect={handleClauseSelect}
+                                />
+                            )}
                         </div>
 
                         {watch('selectedClauses').length === 0 ? (
@@ -401,61 +422,63 @@ const ContractForm = (props: {
                                     })
                                 )}
                                 setItems={(newClauses) => {
-                                    setValue(
-                                        'selectedClauses',
-                                        newClauses.map((clause) => ({
-                                            ...clause,
-                                            order: clause.order,
-                                            createdAt:
-                                                clause.createdAt.toISOString(),
-                                            updatedAt:
-                                                clause.updatedAt.toISOString(),
-                                            userId: clause.userId,
-                                        }))
-                                    );
+                                    if (!isViewMode) {
+                                        setValue(
+                                            'selectedClauses',
+                                            newClauses.map((clause) => ({
+                                                ...clause,
+                                                order: clause.order,
+                                                createdAt:
+                                                    clause.createdAt.toISOString(),
+                                                updatedAt:
+                                                    clause.updatedAt.toISOString(),
+                                                userId: clause.userId,
+                                            }))
+                                        );
+                                    }
                                 }}
                                 onEdit={() => {}}
                                 onDelete={(clause) => {
-                                    setValue(
-                                        'selectedClauses',
-                                        watch('selectedClauses')
-                                            .filter((c) => c.id !== clause.id)
-                                            .map((c, index) => ({
-                                                ...c,
-                                                order: index,
-                                                userId: c.userId,
-                                            }))
-                                    );
+                                    if (!isViewMode) {
+                                        setValue(
+                                            'selectedClauses',
+                                            watch('selectedClauses')
+                                                .filter(
+                                                    (c) => c.id !== clause.id
+                                                )
+                                                .map((c, index) => ({
+                                                    ...c,
+                                                    order: index,
+                                                    userId: c.userId,
+                                                }))
+                                        );
+                                    }
                                 }}
                                 isFormContext={true}
                                 preventRefresh={true}
+                                disabled={isViewMode}
                             />
                         )}
                     </div>
 
-                    <div className='flex justify-end space-x-4'>
-                        <Button
-                            variant='outline'
-                            onClick={() => router.push('/dashboard/contracts')}
-                            type='button'
-                        >
-                            Annuler
-                        </Button>
-                        <Button type='submit' disabled={isSubmitting}>
-                            {isSubmitting ? (
-                                <>
-                                    <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-                                    {isEditing
-                                        ? 'Mise à jour...'
-                                        : 'Création...'}
-                                </>
-                            ) : isEditing ? (
-                                'Mettre à jour'
-                            ) : (
-                                'Créer'
-                            )}
-                        </Button>
-                    </div>
+                    {!isViewMode && (
+                        <div className='flex justify-end space-x-4'>
+                            <Button type='submit' disabled={isSubmitting}>
+                                {isSubmitting ? (
+                                    <>
+                                        <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                                        {isEditing
+                                            ? 'Mise à jour...'
+                                            : 'Création...'}
+                                    </>
+                                ) : isEditing ? (
+                                    'Mettre à jour'
+                                ) : (
+                                    'Créer'
+                                )}
+                            </Button>
+                        </div>
+                    )}
                 </form>
             </div>
         </PageTransition>
