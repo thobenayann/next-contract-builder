@@ -32,6 +32,7 @@ L'objectif de l'application est de permettre la gestion des contrats au sein d'o
     -   Créer des contrats.
     -   Ajouter des clauses à un contrat et en modifier l’ordre.
     -   Modifier uniquement les contrats qu’il a créés.
+    -   Voir les contrats des autres utilisateurs dans la même organisation avec un label "Auteur" et un bouton "Voir".
 
 ## Considérations techniques
 

@@ -1,84 +1,41 @@
-import { NextResponse } from 'next/server';
-
 import { prisma } from '@/app/_lib/db';
 import { getSession } from '@/app/_lib/session';
-import type { ContractFormData } from '@/app/_lib/types';
-import { contractSchema } from '@/app/_lib/validations/schemas/contract.schema';
+import { NextResponse } from 'next/server';
 
-export async function POST(request: Request) {
+export async function GET() {
     try {
-        const data = (await request.json()) as ContractFormData;
         const session = await getSession();
-
-        if (!session) {
+        if (!session?.userId) {
             return NextResponse.json(
-                { error: 'Session non trouvée' },
+                { error: 'Non authentifié' },
                 { status: 401 }
             );
         }
 
-        // Validation avec Zod
-        const validationResult = contractSchema.safeParse(data);
-        if (!validationResult.success) {
-            console.error('Erreur de validation:', validationResult.error);
+        // Récupérer l'utilisateur avec son organisation active
+        const user = await prisma.user.findUnique({
+            where: { id: session.userId },
+            select: {
+                activeOrganization: true,
+            },
+        });
+
+        if (!user?.activeOrganization) {
             return NextResponse.json(
-                {
-                    error: 'Données invalides',
-                    issues: validationResult.error.issues,
-                },
+                { error: 'Aucune organisation active' },
                 { status: 400 }
             );
         }
 
-        // Créer le contrat
-        const contract = await prisma.contract.create({
-            data: {
-                userId: session?.userId,
-                type: data.type,
-                startDate: new Date(data.startDate),
-                endDate: data.endDate ? new Date(data.endDate) : null,
-                employeeId: data.employeeId,
-                companyId: '1',
-            },
-        });
-
-        // Créer les associations de clauses
-        if (data.selectedClauses.length > 0) {
-            const clauseAssociations = await Promise.all(
-                data.selectedClauses.map((clause, index) =>
-                    prisma.clausesOnContracts.create({
-                        data: {
-                            contractId: contract.id,
-                            clauseId: clause.id,
-                            order: index,
-                        },
-                    })
-                )
-            );
-            console.log('Associations créées:', clauseAssociations);
-        }
-
-        return NextResponse.json(contract);
-    } catch (error) {
-        console.error('Erreur détaillée:', error);
-        return NextResponse.json(
-            { error: 'Erreur lors de la création' },
-            { status: 500 }
-        );
-    }
-}
-
-export async function GET() {
-    try {
         const contracts = await prisma.contract.findMany({
+            where: {
+                organizationId: user.activeOrganization.id,
+            },
             include: {
                 employee: true,
-                clauses: {
-                    include: {
-                        clause: true,
-                    },
-                    orderBy: {
-                        order: 'asc',
+                user: {
+                    select: {
+                        name: true,
                     },
                 },
             },
@@ -86,9 +43,17 @@ export async function GET() {
                 createdAt: 'desc',
             },
         });
-        return NextResponse.json(contracts);
+
+        const formattedContracts = contracts.map((contract) => ({
+            ...contract,
+            isOwner: contract.userId === session.userId,
+            authorName: contract.user.name,
+            user: undefined,
+        }));
+
+        return NextResponse.json(formattedContracts);
     } catch (error) {
-        console.error('Erreur lors de la récupération:', error);
+        console.error('Erreur:', error);
         return NextResponse.json(
             { error: 'Erreur lors de la récupération' },
             { status: 500 }
