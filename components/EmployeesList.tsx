@@ -62,7 +62,7 @@ export const EmployeesList = ({
 
             setEmployees(employees.filter((e) => e.id !== deleteEmployee.id));
             toast({
-                title: 'Succès',
+                title: 'Succès! 🎉',
                 description: 'Employé supprimé avec succès',
                 variant: 'success',
             });

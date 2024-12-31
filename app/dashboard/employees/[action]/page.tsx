@@ -2,6 +2,7 @@
 
 import { use, useEffect, useState } from 'react';
 
+import { format, subYears } from 'date-fns';
 import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Controller, useForm } from 'react-hook-form';
@@ -54,37 +55,49 @@ const EmployeeForm = (props: {
     });
     const isEditing = params.action === 'edit';
 
+    // Calculer la date maximale (18 ans avant aujourd'hui)
+    const maxDate = format(subYears(new Date(), 18), 'yyyy-MM-dd');
+
     useEffect(() => {
-        if (isEditing && searchParams.id) {
-            setIsLoading(true);
-            fetch(`/api/employees/${searchParams.id}`)
-                .then(async (res) => {
-                    if (!res.ok) throw new Error('Employé non trouvé');
-                    return res.json();
-                })
-                .then((data) => {
+        const loadEmployee = async () => {
+            if (isEditing && searchParams.id) {
+                try {
+                    setIsLoading(true);
+                    const res = await fetch(
+                        `/api/employees/${searchParams.id}`
+                    );
+                    if (!res.ok) {
+                        throw new Error('Employé non trouvé');
+                    }
+                    const data = await res.json();
+
                     reset({
                         ...data,
                         birthdate: new Date(data.birthdate)
                             .toISOString()
                             .split('T')[0],
                     });
-                })
-                .catch((err) => {
+                } catch (err) {
                     console.error('Erreur lors du chargement:', err);
                     toast({
                         variant: 'error',
                         title: 'Erreur',
-                        description: err.message || 'Erreur lors du chargement',
+                        description:
+                            err instanceof Error
+                                ? err.message
+                                : 'Erreur lors du chargement',
                     });
                     router.push('/dashboard/employees');
-                })
-                .finally(() => {
+                } finally {
                     setIsLoading(false);
-                });
-        } else {
-            setIsInitialLoading(false);
-        }
+                    setIsInitialLoading(false);
+                }
+            } else {
+                setIsInitialLoading(false);
+            }
+        };
+
+        loadEmployee();
     }, [isEditing, searchParams.id, reset, router, toast]);
 
     const onSubmit = async (data: EmployeeFormData) => {
@@ -121,7 +134,7 @@ const EmployeeForm = (props: {
 
             toast({
                 variant: 'success',
-                title: 'Succès',
+                title: 'Succès! 🎉',
                 description: isEditing
                     ? 'Employé modifié avec succès'
                     : 'Employé créé avec succès',
@@ -265,6 +278,7 @@ const EmployeeForm = (props: {
                             <Input
                                 id='birthdate'
                                 type='date'
+                                max={maxDate}
                                 {...register('birthdate')}
                                 disabled={isLoading}
                             />
