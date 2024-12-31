@@ -1,55 +1,24 @@
-import { auth } from '@/app/_lib/auth';
-import { prisma } from '@/app/_lib/db';
-import { clauseSchema } from '@/app/_lib/validations/schemas/clause.schema';
 import { Prisma } from '@prisma/client';
-import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
+
+import { prisma } from '@/app/_lib/db';
+import { getSession } from '@/app/_lib/session';
+import { clauseSchema } from '@/app/_lib/validations/schemas/clause.schema';
 
 export async function POST(request: Request) {
     try {
-        const sessionData = await auth.api.getSession({
-            headers: await headers(),
-        });
-
-        if (!sessionData?.session?.userId) {
+        const session = await getSession();
+        if (!session?.userId) {
             return NextResponse.json(
                 { error: 'Non authentifié' },
                 { status: 401 }
             );
         }
 
-        const user = await prisma.user.findUnique({
-            where: { id: sessionData.session.userId },
-            select: { activeOrganizationId: true },
-        });
+        const data = await request.json();
 
-        if (!user?.activeOrganizationId) {
-            return NextResponse.json(
-                { error: 'Aucune organisation active' },
-                { status: 400 }
-            );
-        }
-
-        const body = await request.json();
-
-        // Vérifier si une clause avec le même titre existe déjà
-        const existingClause = await prisma.clause.findFirst({
-            where: {
-                title: body.title,
-                userId: sessionData.session.userId,
-                organizationId: user.activeOrganizationId,
-            },
-        });
-
-        if (existingClause) {
-            return NextResponse.json(
-                { error: 'Une clause avec ce titre existe déjà' },
-                { status: 400 }
-            );
-        }
-
-        // Validation Zod
-        const validationResult = clauseSchema.safeParse(body);
+        // Validation des données
+        const validationResult = clauseSchema.safeParse(data);
         if (!validationResult.success) {
             return NextResponse.json(
                 {
@@ -60,34 +29,39 @@ export async function POST(request: Request) {
             );
         }
 
-        const data = validationResult.data;
-
-        // Trouver la dernière clause pour l'ordre
-        const lastClause = await prisma.clause.findFirst({
+        // Vérifier si une clause avec le même titre existe déjà pour cet utilisateur
+        const existingClause = await prisma.clause.findFirst({
             where: {
-                userId: sessionData.session.userId,
-                organizationId: user.activeOrganizationId,
+                title: validationResult.data.title,
+                userId: session.userId,
             },
-            orderBy: { order: 'desc' },
         });
 
-        const newClause = await prisma.clause.create({
+        if (existingClause) {
+            return NextResponse.json(
+                { error: 'Vous avez déjà une clause avec ce titre' },
+                { status: 400 }
+            );
+        }
+
+        // Créer la clause
+        const clause = await prisma.clause.create({
             data: {
-                ...data,
-                userId: sessionData.session.userId,
-                organizationId: user.activeOrganizationId,
-                order: lastClause ? lastClause.order + 1 : 0,
+                ...validationResult.data,
+                userId: session.userId,
+                order: 0, // On peut simplement mettre 0 car l'ordre n'est pas utilisé
             },
         });
 
-        return NextResponse.json(newClause);
+        return NextResponse.json(clause);
     } catch (error) {
-        console.error('Erreur lors de la création:', error);
+        console.error('Erreur:', error);
 
+        // Gestion des erreurs Prisma
         if (error instanceof Prisma.PrismaClientKnownRequestError) {
             if (error.code === 'P2002') {
                 return NextResponse.json(
-                    { error: 'Une clause avec ce titre existe déjà' },
+                    { error: 'Vous avez déjà une clause avec ce titre' },
                     { status: 400 }
                 );
             }

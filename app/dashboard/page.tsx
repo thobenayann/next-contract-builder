@@ -1,20 +1,52 @@
+import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
 import { prisma } from '@/app/_lib/db';
-import { getUserSession } from '@/app/_lib/getUserSession';
+import { getSession } from '@/app/_lib/session';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LoadingSpinner } from '@/components/ui/loading';
 import { PageTransition } from '@/components/ui/transition';
-import { redirect } from 'next/navigation';
 
 const DashboardPage = async () => {
-    const clausesCount = await prisma.clause.count();
-    const contractsCount = await prisma.contract.count();
-    const userSession = await getUserSession();
+    const session = await getSession();
+    const currentUserId = session?.userId;
 
-    if (!userSession) {
-        return redirect('/auth/sign-in');
+    // Récupérer l'utilisateur avec son organisation active et les membres
+    const user = await prisma.user.findUnique({
+        where: { id: currentUserId },
+        select: {
+            activeOrganization: {
+                include: {
+                    members: {
+                        select: { userId: true },
+                    },
+                },
+            },
+        },
+    });
+
+    if (!user?.activeOrganization) {
+        redirect('/dashboard/organizations');
     }
+
+    // Récupérer les IDs des membres de l'organisation
+    const organizationMemberIds = user.activeOrganization.members.map(
+        (m) => m.userId
+    );
+
+    // Récupérer les statistiques pour l'organisation active
+    const [clausesCount, contractsCount] = await Promise.all([
+        prisma.clause.count({
+            where: {
+                userId: { in: organizationMemberIds },
+            },
+        }),
+        prisma.contract.count({
+            where: {
+                organizationId: user.activeOrganization.id,
+            },
+        }),
+    ]);
 
     return (
         <PageTransition>
@@ -31,7 +63,8 @@ const DashboardPage = async () => {
                                     {clausesCount}
                                 </p>
                                 <p className='text-sm text-muted-foreground'>
-                                    Clauses créées
+                                    Clauses créées dans{' '}
+                                    {user.activeOrganization.name}
                                 </p>
                             </CardContent>
                         </Card>
@@ -44,7 +77,8 @@ const DashboardPage = async () => {
                                     {contractsCount}
                                 </p>
                                 <p className='text-sm text-muted-foreground'>
-                                    Contrats générés
+                                    Contrats générés dans{' '}
+                                    {user.activeOrganization.name}
                                 </p>
                             </CardContent>
                         </Card>

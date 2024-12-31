@@ -14,11 +14,17 @@ const ClausesPage = async () => {
     const session = await getSession();
     const currentUserId = session?.userId;
 
-    // Récupérer l'utilisateur avec son organisation active
+    // Récupérer l'utilisateur avec son organisation active et les membres
     const user = await prisma.user.findUnique({
         where: { id: currentUserId },
         select: {
-            activeOrganization: true,
+            activeOrganization: {
+                include: {
+                    members: {
+                        select: { userId: true },
+                    },
+                },
+            },
         },
     });
 
@@ -26,12 +32,15 @@ const ClausesPage = async () => {
         redirect('/dashboard/organizations');
     }
 
-    const activeOrgId = user.activeOrganization.id;
+    // Récupérer les IDs des membres de l'organisation
+    const organizationMemberIds = user.activeOrganization.members.map(
+        (m) => m.userId
+    );
 
-    // Récupérer les clauses de l'organisation courante
+    // Récupérer toutes les clauses des membres de l'organisation
     const clauses = await prisma.clause.findMany({
         where: {
-            organizationId: activeOrgId,
+            userId: { in: organizationMemberIds },
         },
         include: {
             user: {

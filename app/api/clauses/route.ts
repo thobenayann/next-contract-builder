@@ -1,37 +1,47 @@
-import { auth } from '@/app/_lib/auth';
 import { prisma } from '@/app/_lib/db';
-import { getUserSession } from '@/app/_lib/getUserSession';
-import { headers } from 'next/headers';
+import { getSession } from '@/app/_lib/session';
 import { NextResponse } from 'next/server';
 
 export async function GET() {
     try {
-        const sessionData = await auth.api.getSession({
-            headers: await headers(),
-        });
-
-        if (!sessionData?.session?.userId) {
+        const session = await getSession();
+        if (!session?.userId) {
             return NextResponse.json(
                 { error: 'Non authentifié' },
                 { status: 401 }
             );
         }
 
+        // Récupérer l'organisation active de l'utilisateur
         const user = await prisma.user.findUnique({
-            where: { id: sessionData.session.userId },
-            select: { activeOrganizationId: true },
+            where: { id: session.userId },
+            select: {
+                activeOrganization: {
+                    include: {
+                        members: {
+                            select: { userId: true },
+                        },
+                    },
+                },
+            },
         });
 
-        if (!user?.activeOrganizationId) {
+        if (!user?.activeOrganization) {
             return NextResponse.json(
                 { error: 'Aucune organisation active' },
                 { status: 400 }
             );
         }
 
+        // Récupérer les IDs des membres de l'organisation
+        const organizationMemberIds = user.activeOrganization.members.map(
+            (m) => m.userId
+        );
+
+        // Récupérer toutes les clauses des membres de l'organisation
         const clauses = await prisma.clause.findMany({
             where: {
-                organizationId: user.activeOrganizationId,
+                userId: { in: organizationMemberIds },
             },
             include: {
                 user: {
@@ -45,45 +55,16 @@ export async function GET() {
 
         const formattedClauses = clauses.map((clause) => ({
             ...clause,
-            isOwner: clause.userId === sessionData.session.userId,
+            isOwner: clause.userId === session.userId,
             authorName: clause.user.name,
             user: undefined,
         }));
 
         return NextResponse.json(formattedClauses);
     } catch (error) {
-        console.error('Erreur lors de la récupération:', error);
-        return NextResponse.json(
-            { error: 'Erreur lors de la récupération' },
-            { status: 500 }
-        );
-    }
-}
-
-export async function POST(request: Request) {
-    try {
-        const session = await getUserSession();
-        if (!session?.id || !session?.activeOrganizationId) {
-            return NextResponse.json(
-                { error: "Non authentifié ou pas d'organisation sélectionnée" },
-                { status: 401 }
-            );
-        }
-
-        const data = await request.json();
-        const clause = await prisma.clause.create({
-            data: {
-                ...data,
-                userId: session.id,
-                organizationId: session.activeOrganizationId,
-            },
-        });
-
-        return NextResponse.json(clause);
-    } catch (error) {
         console.error('Erreur:', error);
         return NextResponse.json(
-            { error: 'Erreur lors de la création' },
+            { error: 'Erreur lors de la récupération' },
             { status: 500 }
         );
     }
