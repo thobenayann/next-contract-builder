@@ -1,31 +1,36 @@
 import {
     closestCenter,
     DndContext,
-    DragEndEvent,
     KeyboardSensor,
     PointerSensor,
     useSensor,
     useSensors,
 } from '@dnd-kit/core';
 import {
+    arrayMove,
     SortableContext,
     sortableKeyboardCoordinates,
     verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { AnimatePresence, motion } from 'framer-motion';
-
-import { SortableItem } from '@/components/SortableItem';
+import type { Clause } from '@prisma/client';
+import { SortableItem } from './SortableItem';
 
 interface DraggableListProps {
-    items: any[];
-    onReorder: (newOrder: any[]) => void;
-    renderItem: (item: any) => React.ReactNode;
+    items: Clause[];
+    setItems: (items: Clause[]) => void;
+    onEdit: (item: Clause) => void;
+    onDelete: (item: Clause) => void;
+    isFormContext?: boolean;
+    preventRefresh?: boolean;
 }
 
 export const DraggableList = ({
     items,
-    onReorder,
-    renderItem,
+    setItems,
+    onEdit,
+    onDelete,
+    isFormContext = false,
+    preventRefresh = false,
 }: DraggableListProps) => {
     const sensors = useSensors(
         useSensor(PointerSensor),
@@ -34,18 +39,21 @@ export const DraggableList = ({
         })
     );
 
-    const handleDragEnd = (event: DragEndEvent) => {
+    const handleDragEnd = (event: any) => {
         const { active, over } = event;
 
-        if (over && active.id !== over.id) {
+        if (active.id !== over.id) {
             const oldIndex = items.findIndex((item) => item.id === active.id);
             const newIndex = items.findIndex((item) => item.id === over.id);
 
-            const newItems = [...items];
-            const [movedItem] = newItems.splice(oldIndex, 1);
-            newItems.splice(newIndex, 0, movedItem);
+            const newItems = arrayMove(items, oldIndex, newIndex).map(
+                (item, index) => ({
+                    ...item,
+                    order: index,
+                })
+            );
 
-            onReorder(newItems);
+            setItems(newItems);
         }
     };
 
@@ -56,28 +64,22 @@ export const DraggableList = ({
             onDragEnd={handleDragEnd}
         >
             <SortableContext
-                items={items}
+                items={items.map((item) => item.id)}
                 strategy={verticalListSortingStrategy}
             >
-                <ul className='space-y-2'>
-                    <AnimatePresence>
-                        {items.map((item) => (
-                            <motion.div
-                                key={item.id}
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -20 }}
-                                transition={{ duration: 0.2 }}
-                            >
-                                <SortableItem id={item.id}>
-                                    <div className='w-full'>
-                                        {renderItem(item)}
-                                    </div>
-                                </SortableItem>
-                            </motion.div>
-                        ))}
-                    </AnimatePresence>
-                </ul>
+                <div className='space-y-2'>
+                    {items.map((item) => (
+                        <SortableItem
+                            key={item.id}
+                            id={item.id}
+                            item={item}
+                            onEdit={() => onEdit(item)}
+                            onDelete={() => onDelete(item)}
+                            isFormContext={isFormContext}
+                            preventRefresh={preventRefresh}
+                        />
+                    ))}
+                </div>
             </SortableContext>
         </DndContext>
     );

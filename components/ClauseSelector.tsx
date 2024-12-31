@@ -7,9 +7,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-
 import type { Clause } from '@prisma/client';
-
 
 interface ClauseSelectorProps {
     availableClauses: Clause[];

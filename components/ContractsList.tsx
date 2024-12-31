@@ -29,14 +29,16 @@ interface Contract {
         lastName: string;
     };
     isOwner: boolean;
-    authorName: string;
+    authorName: string | null;
+}
+
+interface ContractsListProps {
+    initialContracts: Contract[];
 }
 
 export const ContractsList = ({
-    contracts = [],
-}: {
-    contracts: Contract[];
-}) => {
+    initialContracts = [],
+}: ContractsListProps) => {
     const router = useRouter();
     const { toast } = useToast();
     const [deleteContract, setDeleteContract] = useState<Contract | null>(null);
@@ -108,12 +110,12 @@ export const ContractsList = ({
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {contracts.length > 0 ? (
-                            contracts.map((contract) => (
+                        {initialContracts.length > 0 ? (
+                            initialContracts.map((contract) => (
                                 <TableRow key={contract.id}>
                                     <TableCell>
-                                        {contract.employee.firstName}{' '}
-                                        {contract.employee.lastName}
+                                        {contract.employee.lastName}{' '}
+                                        {contract.employee.firstName}
                                     </TableCell>
                                     <TableCell>{contract.type}</TableCell>
                                     <TableCell>
@@ -134,7 +136,7 @@ export const ContractsList = ({
                                     </TableCell>
                                     <TableCell>{contract.authorName}</TableCell>
                                     <TableCell>
-                                        <div className='flex items-center gap-2'>
+                                        <div className='flex items-center justify-end gap-2'>
                                             {contract.isOwner ? (
                                                 <>
                                                     <Button

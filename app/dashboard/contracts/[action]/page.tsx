@@ -95,6 +95,7 @@ const ContractForm = (props: {
                         category: clause.category || 'OPTIONAL',
                         createdAt: new Date(clause.createdAt),
                         updatedAt: new Date(clause.updatedAt),
+                        userId: clause.userId,
                     }))
                 );
                 setEmployees(employees);
@@ -139,7 +140,7 @@ const ContractForm = (props: {
         try {
             const url = isEditing
                 ? `/api/contracts/${searchParams.id}`
-                : '/api/contracts';
+                : '/api/contracts/create';
 
             const response = await fetch(url, {
                 method: isEditing ? 'PUT' : 'POST',
@@ -185,15 +186,27 @@ const ContractForm = (props: {
 
     // Ajout de la fonction pour gérer la sélection des clauses
     const handleClauseSelect = (clause: Clause) => {
-        setValue('selectedClauses', [
-            ...watch('selectedClauses'),
-            {
+        try {
+            const formattedClause = {
                 ...clause,
                 order: watch('selectedClauses').length,
-                createdAt: clause.createdAt.toISOString(),
-                updatedAt: clause.updatedAt.toISOString(),
-            },
-        ]);
+                createdAt: new Date(clause.createdAt).toISOString(),
+                updatedAt: new Date(clause.updatedAt).toISOString(),
+                userId: clause.userId,
+            };
+
+            setValue('selectedClauses', [
+                ...watch('selectedClauses'),
+                formattedClause,
+            ]);
+        } catch (error) {
+            console.error('Erreur:', error);
+            toast({
+                title: 'Erreur',
+                description: "Impossible d'ajouter la clause",
+                variant: 'error',
+            });
+        }
     };
 
     if (isInitialLoading) {
@@ -363,6 +376,7 @@ const ContractForm = (props: {
                                         ...clause,
                                         createdAt: new Date(clause.createdAt),
                                         updatedAt: new Date(clause.updatedAt),
+                                        userId: clause.userId || '',
                                     })
                                 )}
                                 onSelect={handleClauseSelect}
@@ -383,6 +397,7 @@ const ContractForm = (props: {
                                         ...clause,
                                         createdAt: new Date(clause.createdAt),
                                         updatedAt: new Date(clause.updatedAt),
+                                        userId: clause.userId || '',
                                     })
                                 )}
                                 setItems={(newClauses) => {
@@ -395,6 +410,7 @@ const ContractForm = (props: {
                                                 clause.createdAt.toISOString(),
                                             updatedAt:
                                                 clause.updatedAt.toISOString(),
+                                            userId: clause.userId,
                                         }))
                                     );
                                 }}
@@ -407,6 +423,7 @@ const ContractForm = (props: {
                                             .map((c, index) => ({
                                                 ...c,
                                                 order: index,
+                                                userId: c.userId,
                                             }))
                                     );
                                 }}
