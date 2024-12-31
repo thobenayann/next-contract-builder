@@ -53,6 +53,10 @@ model Clause {
   updatedAt DateTime             @updatedAt
   userId    String
   user      User                 @relation(fields: [userId], references: [id])
+  organizationId String
+  organization   Organization    @relation(fields: [organizationId], references: [id])
+
+  @@unique([title, userId, organizationId])
 }
 
 model ClausesOnContracts {
@@ -151,6 +155,7 @@ model Organization {
   invitations Invitation[]
   activeUsers User[] @relation("ActiveOrganization")
   sessions  Session[]
+  clauses   Clause[]
 
   @@map("organization")
 }

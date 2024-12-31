@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 
+import { auth } from '@/app/_lib/auth';
 import { prisma } from '@/app/_lib/db';
+import { headers } from 'next/headers';
 
 export async function GET(
     _request: Request,
@@ -55,62 +57,48 @@ export async function PUT(
 }
 
 export async function DELETE(
-    _request: Request,
+    request: Request,
     props: { params: Promise<{ id: string }> }
 ) {
     const params = await props.params;
+
     try {
-        // Vérifier si la clause est utilisée dans des contrats
-        const clauseWithContracts = await prisma.clause.findUnique({
-            where: { id: params.id },
-            include: {
-                contracts: {
-                    include: {
-                        contract: {
-                            include: {
-                                employee: true,
-                            },
-                        },
-                    },
-                },
-            },
+        const sessionData = await auth.api.getSession({
+            headers: await headers(),
         });
 
-        if (!clauseWithContracts) {
+        if (!sessionData?.session?.userId) {
+            return NextResponse.json(
+                { error: 'Non authentifié' },
+                { status: 401 }
+            );
+        }
+
+        const clause = await prisma.clause.findUnique({
+            where: { id: params.id },
+        });
+
+        if (!clause) {
             return NextResponse.json(
                 { error: 'Clause non trouvée' },
                 { status: 404 }
             );
         }
 
-        // Si la clause est utilisée dans des contrats
-        if (clauseWithContracts.contracts.length > 0) {
-            const contractsDetails = clauseWithContracts.contracts.map((c) => ({
-                contractId: c.contract.id,
-                contractType: c.contract.type,
-                employeeName: `${c.contract.employee.lastName} ${c.contract.employee.firstName}`,
-                startDate: c.contract.startDate,
-            }));
-
+        if (clause.userId !== sessionData.session.userId) {
             return NextResponse.json(
-                {
-                    error: 'Clause utilisée',
-                    message:
-                        'Cette clause ne peut pas être supprimée car elle est utilisée dans des contrats existants.',
-                    contracts: contractsDetails,
-                },
-                { status: 409 }
+                { error: 'Non autorisé' },
+                { status: 403 }
             );
         }
 
-        // Si la clause n'est pas utilisée, procéder à la suppression
         await prisma.clause.delete({
             where: { id: params.id },
         });
 
-        return NextResponse.json({ success: true });
+        return NextResponse.json({ message: 'Clause supprimée avec succès' });
     } catch (error) {
-        console.error('Erreur:', error);
+        console.error('Erreur lors de la suppression:', error);
         return NextResponse.json(
             { error: 'Erreur lors de la suppression' },
             { status: 500 }

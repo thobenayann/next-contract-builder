@@ -10,21 +10,27 @@ import { DraggableList } from '@/components/DraggableList';
 import { Button } from '@/components/ui/button';
 import type { Clause } from '@prisma/client';
 
+interface ClauseWithAuthor extends Clause {
+    isOwner: boolean;
+    authorName: string | null;
+}
+
 interface ClausesListProps {
-    initialClauses: Clause[];
+    initialClauses: ClauseWithAuthor[];
 }
 
 export const ClausesList = ({ initialClauses }: ClausesListProps) => {
-    const [clauses, setClauses] = useState<Clause[]>(initialClauses);
+    const [clauses, setClauses] = useState<ClauseWithAuthor[]>(initialClauses);
     const [isLoading, setIsLoading] = useState(false);
-    const [selectedClause, setSelectedClause] = useState<Clause | null>(null);
+    const [selectedClause, setSelectedClause] =
+        useState<ClauseWithAuthor | null>(null);
     const router = useRouter();
 
     useEffect(() => {
         setClauses(initialClauses);
     }, [initialClauses]);
 
-    const handleReorder = async (newClauses: Clause[]) => {
+    const handleReorder = async (newClauses: ClauseWithAuthor[]) => {
         setClauses(newClauses);
         try {
             const response = await fetch('/api/clauses/reorder', {
@@ -48,11 +54,11 @@ export const ClausesList = ({ initialClauses }: ClausesListProps) => {
         }
     };
 
-    const handleEdit = (clause: Clause) => {
+    const handleEdit = (clause: ClauseWithAuthor) => {
         router.push(`/dashboard/clauses/edit/${clause.id}`);
     };
 
-    const handleDelete = async (clause: Clause) => {
+    const handleDelete = async (clause: ClauseWithAuthor) => {
         setIsLoading(true);
         try {
             const response = await fetch(`/api/clauses/${clause.id}`, {
@@ -73,30 +79,41 @@ export const ClausesList = ({ initialClauses }: ClausesListProps) => {
         }
     };
 
-    const renderClause = (clause: Clause) => (
+    const renderClause = (clause: ClauseWithAuthor) => (
         <div className='flex items-center justify-between w-full bg-white p-4 rounded-lg shadow-sm'>
-            <h3 className='text-lg font-medium text-gray-900'>
-                {clause.title}
-            </h3>
+            <div className='flex flex-col'>
+                <h3 className='text-lg font-medium text-gray-900'>
+                    {clause.title}
+                </h3>
+                {!clause.isOwner && (
+                    <span className='text-sm text-gray-500'>
+                        Auteur: {clause.authorName || 'Inconnu'}
+                    </span>
+                )}
+            </div>
             <div className='flex space-x-2'>
-                <Button
-                    variant='ghost'
-                    size='icon'
-                    onClick={() => handleEdit(clause)}
-                    className='text-gray-600 hover:text-blue-600'
-                >
-                    <Pencil className='h-4 w-4' />
-                    <span className='sr-only'>Éditer</span>
-                </Button>
-                <Button
-                    variant='ghost'
-                    size='icon'
-                    onClick={() => setSelectedClause(clause)}
-                    className='text-gray-600 hover:text-red-600'
-                >
-                    <Trash2 className='h-4 w-4' />
-                    <span className='sr-only'>Supprimer</span>
-                </Button>
+                {clause.isOwner && (
+                    <>
+                        <Button
+                            variant='ghost'
+                            size='icon'
+                            onClick={() => handleEdit(clause)}
+                            className='text-gray-600 hover:text-blue-600'
+                        >
+                            <Pencil className='h-4 w-4' />
+                            <span className='sr-only'>Éditer</span>
+                        </Button>
+                        <Button
+                            variant='ghost'
+                            size='icon'
+                            onClick={() => setSelectedClause(clause)}
+                            className='text-gray-600 hover:text-red-600'
+                        >
+                            <Trash2 className='h-4 w-4' />
+                            <span className='sr-only'>Supprimer</span>
+                        </Button>
+                    </>
+                )}
             </div>
         </div>
     );

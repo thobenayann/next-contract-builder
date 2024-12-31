@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
+import { ClauseFormData } from '@/app/_lib/validations/schemas/clause.schema';
 import TipTapEditor from '@/components/TipTapEditor';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,26 +21,35 @@ const CreateClausePage = () => {
     const [, setError] = useState<string | null>(null);
 
     const handleSubmit = async () => {
-        if (!title.trim()) {
-            setError('Le titre est requis');
-            return;
-        }
-        setError(null);
+        const formData: ClauseFormData = {
+            title,
+            content: editorContent,
+            category: 'default',
+        };
+
         setIsLoading(true);
 
         try {
-            const response = await fetch('/api/clauses', {
+            const response = await fetch('/api/clauses/create', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ title, content: editorContent }),
+                body: JSON.stringify(formData),
             });
 
+            const result = await response.json();
+
             if (!response.ok) {
-                throw new Error('Erreur lors de la création');
+                if (result.issues) {
+                    const errorMessage = result.issues
+                        .map((issue: any) => issue.message)
+                        .join(', ');
+                    throw new Error(errorMessage);
+                }
+                throw new Error(result.error || 'Une erreur est survenue');
             }
 
             toast({
-                title: 'Succès',
+                title: 'Succès! 🎉',
                 description: 'Clause créée avec succès',
                 variant: 'success',
             });
@@ -47,12 +57,15 @@ const CreateClausePage = () => {
             router.push('/dashboard/clauses');
             router.refresh();
         } catch (error) {
-            setError(
-                error instanceof Error
-                    ? error.message
-                    : 'Une erreur est survenue'
-            );
-            console.error('Erreur lors de la création:', error);
+            console.error('Erreur:', error);
+            toast({
+                title: 'Erreur',
+                description:
+                    error instanceof Error
+                        ? error.message
+                        : 'Une erreur est survenue',
+                variant: 'error',
+            });
         } finally {
             setIsLoading(false);
         }

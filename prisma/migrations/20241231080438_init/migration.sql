@@ -40,6 +40,7 @@ CREATE TABLE "Clause" (
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "userId" TEXT NOT NULL,
+    "organizationId" TEXT NOT NULL,
 
     CONSTRAINT "Clause_pkey" PRIMARY KEY ("id")
 );
@@ -159,6 +160,9 @@ CREATE UNIQUE INDEX "Employee_ssn_key" ON "Employee"("ssn");
 CREATE UNIQUE INDEX "Contract_employeeId_key" ON "Contract"("employeeId");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "Clause_title_userId_organizationId_key" ON "Clause"("title", "userId", "organizationId");
+
+-- CreateIndex
 CREATE INDEX "ClausesOnContracts_contractId_idx" ON "ClausesOnContracts"("contractId");
 
 -- CreateIndex
@@ -193,6 +197,9 @@ ALTER TABLE "Contract" ADD CONSTRAINT "Contract_userId_fkey" FOREIGN KEY ("userI
 
 -- AddForeignKey
 ALTER TABLE "Clause" ADD CONSTRAINT "Clause_userId_fkey" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Clause" ADD CONSTRAINT "Clause_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "organization"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "ClausesOnContracts" ADD CONSTRAINT "ClausesOnContracts_contractId_fkey" FOREIGN KEY ("contractId") REFERENCES "Contract"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
