@@ -1,7 +1,9 @@
 import { prisma } from '@/app/_lib/db';
 import { getSession } from '@/app/_lib/session';
-import type { ContractFormData } from '@/app/_lib/types';
-import { contractSchema } from '@/app/_lib/validations/schemas/contract.schema';
+import {
+    ContractFormData,
+    contractSchema,
+} from '@/app/_lib/validations/schemas/contract.schema';
 import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {

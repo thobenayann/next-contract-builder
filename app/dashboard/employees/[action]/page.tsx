@@ -1,17 +1,15 @@
 'use client';
 
-import { use, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
+import { zodResolver } from '@hookform/resolvers/zod';
 import { format, subYears } from 'date-fns';
 import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Controller, useForm } from 'react-hook-form';
 
 import { GENDERS, GENDER_LABELS } from '@/app/_lib/constants';
-import {
-    employeeResolver,
-    type EmployeeFormData,
-} from '@/app/_lib/validations';
+import { EmployeeFormData, employeeSchema } from '@/app/_lib/validations';
 import { EmployeeFormSkeleton } from '@/components/skeletons/EmployeeFormSkeleton';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,25 +23,9 @@ import {
 import { PageTransition } from '@/components/ui/transition';
 import { useToast } from '@/hooks/use-toast';
 
-const EmployeeForm = (props: {
-    params: Promise<{ action: string }>;
-    searchParams: Promise<{ id?: string }>;
-}) => {
-    const searchParams = use(props.searchParams);
-    const params = use(props.params);
-    const router = useRouter();
-    const { toast } = useToast();
-    const [isLoading, setIsLoading] = useState(false);
-    const [isInitialLoading, setIsInitialLoading] = useState(true);
-    const {
-        register,
-        handleSubmit,
-        formState: { errors },
-        setError,
-        control,
-        reset,
-    } = useForm<EmployeeFormData>({
-        resolver: employeeResolver,
+const EmployeeForm = () => {
+    const form = useForm<EmployeeFormData>({
+        resolver: zodResolver(employeeSchema),
         defaultValues: {
             firstName: '',
             lastName: '',
@@ -53,91 +35,62 @@ const EmployeeForm = (props: {
             ssn: '',
         },
     });
-    const isEditing = params.action === 'edit';
+    const router = useRouter();
+    const { toast } = useToast();
+    const [isLoading, setIsLoading] = useState(false);
+    const [isInitialLoading, setIsInitialLoading] = useState(true);
 
     // Calculer la date maximale (18 ans avant aujourd'hui)
     const maxDate = format(subYears(new Date(), 18), 'yyyy-MM-dd');
 
     useEffect(() => {
         const loadEmployee = async () => {
-            if (isEditing && searchParams.id) {
-                try {
-                    setIsLoading(true);
-                    const res = await fetch(
-                        `/api/employees/${searchParams.id}`
-                    );
-                    if (!res.ok) {
-                        throw new Error('Employé non trouvé');
-                    }
-                    const data = await res.json();
-
-                    reset({
-                        ...data,
-                        birthdate: new Date(data.birthdate)
-                            .toISOString()
-                            .split('T')[0],
-                    });
-                } catch (err) {
-                    console.error('Erreur lors du chargement:', err);
-                    toast({
-                        variant: 'error',
-                        title: 'Erreur',
-                        description:
-                            err instanceof Error
-                                ? err.message
-                                : 'Erreur lors du chargement',
-                    });
-                    router.push('/dashboard/employees');
-                } finally {
-                    setIsLoading(false);
-                    setIsInitialLoading(false);
-                }
-            } else {
-                setIsInitialLoading(false);
-            }
+            setIsInitialLoading(false);
         };
 
         loadEmployee();
-    }, [isEditing, searchParams.id, reset, router, toast]);
+    }, []);
 
     const onSubmit = async (data: EmployeeFormData) => {
-        setIsLoading(true);
-
         try {
-            const url = isEditing
-                ? `/api/employees/${searchParams.id}`
-                : '/api/employees/create';
-            const method = isEditing ? 'PUT' : 'POST';
-
-            const response = await fetch(url, {
-                method,
-                headers: { 'Content-Type': 'application/json' },
+            setIsLoading(true);
+            const response = await fetch('/api/employees/create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
                 body: JSON.stringify(data),
             });
 
             const result = await response.json();
 
             if (!response.ok) {
-                if (result.issues) {
-                    result.issues.forEach(
-                        (issue: { path: string[]; message: string }) => {
-                            setError(issue.path[0] as keyof EmployeeFormData, {
-                                message: issue.message,
+                // Gestion des erreurs de validation et autres erreurs
+                if (response.status === 400) {
+                    if (result.details) {
+                        // Erreurs de validation Zod
+                        result.details.forEach((error: any) => {
+                            form.setError(error.path[0], {
+                                message: error.message,
                             });
-                        }
-                    );
+                        });
+                    } else {
+                        // Autres erreurs 400 (comme le numéro de sécu en doublon)
+                        toast({
+                            variant: 'error',
+                            title: 'Erreur',
+                            description: result.error,
+                        });
+                    }
                     return;
                 }
-
                 throw new Error(result.error || 'Une erreur est survenue');
             }
 
             toast({
                 variant: 'success',
                 title: 'Succès! 🎉',
-                description: isEditing
-                    ? 'Employé modifié avec succès'
-                    : 'Employé créé avec succès',
+                description: 'Employé créé avec succès',
             });
 
             router.push('/dashboard/employees');
@@ -172,9 +125,7 @@ const EmployeeForm = (props: {
             <div className='container mx-auto p-4 max-w-4xl'>
                 <div className='flex justify-between items-center mb-6'>
                     <h1 className='text-2xl font-bold'>
-                        {isEditing
-                            ? "Modifier l'employé"
-                            : 'Créer un nouvel employé'}
+                        Créer un nouvel employé
                     </h1>
                     <Button
                         variant='outline'
@@ -183,7 +134,10 @@ const EmployeeForm = (props: {
                         Retour
                     </Button>
                 </div>
-                <form onSubmit={handleSubmit(onSubmit)} className='space-y-6'>
+                <form
+                    onSubmit={form.handleSubmit(onSubmit)}
+                    className='space-y-6'
+                >
                     <div className='grid grid-cols-2 gap-4'>
                         <div className='space-y-2'>
                             <label
@@ -194,12 +148,12 @@ const EmployeeForm = (props: {
                             </label>
                             <Input
                                 id='firstName'
-                                {...register('firstName')}
+                                {...form.register('firstName')}
                                 disabled={isLoading}
                             />
-                            {errors.firstName && (
+                            {form.formState.errors.firstName && (
                                 <p className='text-sm text-red-500'>
-                                    {errors.firstName.message}
+                                    {form.formState.errors.firstName.message}
                                 </p>
                             )}
                         </div>
@@ -213,12 +167,12 @@ const EmployeeForm = (props: {
                             </label>
                             <Input
                                 id='lastName'
-                                {...register('lastName')}
+                                {...form.register('lastName')}
                                 disabled={isLoading}
                             />
-                            {errors.lastName && (
+                            {form.formState.errors.lastName && (
                                 <p className='text-sm text-red-500'>
-                                    {errors.lastName.message}
+                                    {form.formState.errors.lastName.message}
                                 </p>
                             )}
                         </div>
@@ -232,7 +186,7 @@ const EmployeeForm = (props: {
                             </label>
                             <Controller
                                 name='gender'
-                                control={control}
+                                control={form.control}
                                 render={({ field }) => (
                                     <Select
                                         onValueChange={field.onChange}
@@ -261,9 +215,9 @@ const EmployeeForm = (props: {
                                     </Select>
                                 )}
                             />
-                            {errors.gender && (
+                            {form.formState.errors.gender && (
                                 <p className='text-sm text-red-500'>
-                                    {errors.gender.message}
+                                    {form.formState.errors.gender.message}
                                 </p>
                             )}
                         </div>
@@ -279,12 +233,12 @@ const EmployeeForm = (props: {
                                 id='birthdate'
                                 type='date'
                                 max={maxDate}
-                                {...register('birthdate')}
+                                {...form.register('birthdate')}
                                 disabled={isLoading}
                             />
-                            {errors.birthdate && (
+                            {form.formState.errors.birthdate && (
                                 <p className='text-sm text-red-500'>
-                                    {errors.birthdate.message}
+                                    {form.formState.errors.birthdate.message}
                                 </p>
                             )}
                         </div>
@@ -298,12 +252,12 @@ const EmployeeForm = (props: {
                             </label>
                             <Input
                                 id='nationality'
-                                {...register('nationality')}
+                                {...form.register('nationality')}
                                 disabled={isLoading}
                             />
-                            {errors.nationality && (
+                            {form.formState.errors.nationality && (
                                 <p className='text-sm text-red-500'>
-                                    {errors.nationality.message}
+                                    {form.formState.errors.nationality.message}
                                 </p>
                             )}
                         </div>
@@ -317,12 +271,12 @@ const EmployeeForm = (props: {
                             </label>
                             <Input
                                 id='ssn'
-                                {...register('ssn')}
+                                {...form.register('ssn')}
                                 disabled={isLoading}
                             />
-                            {errors.ssn && (
+                            {form.formState.errors.ssn && (
                                 <p className='text-sm text-red-500'>
-                                    {errors.ssn.message}
+                                    {form.formState.errors.ssn.message}
                                 </p>
                             )}
                         </div>
@@ -341,7 +295,7 @@ const EmployeeForm = (props: {
                             {isLoading && (
                                 <Loader2 className='mr-2 h-4 w-4 animate-spin' />
                             )}
-                            {isEditing ? 'Mettre à jour' : 'Créer'}
+                            Créer
                         </Button>
                     </div>
                 </form>

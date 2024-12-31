@@ -1,62 +1,63 @@
-import type { Clause, Contract, Employee } from '@prisma/client';
+import { Prisma } from '@prisma/client';
+import { UseFormReturn } from 'react-hook-form';
+import { ContractFormData } from './validations';
 
-// Types étendus pour les relations
-export interface ClauseWithRelations extends Clause {
-    contracts?: ContractWithRelations[];
-}
-
-export interface ContractWithRelations extends Contract {
-    employee: {
-        firstName: string;
-        lastName: string;
+// Types Prisma
+export type ContractWithRelations = Prisma.ContractGetPayload<{
+    include: {
+        clauses: {
+            include: {
+                clause: true;
+            };
+        };
+        employee: true;
     };
-    clauses: {
-        clause: Clause;
-        order: number;
-    }[];
-}
+}>;
 
-export interface EmployeeWithContract extends Employee {
-    contract: Contract | null;
-}
+export type EmployeeWithContract = Prisma.EmployeeGetPayload<{
+    include: {
+        contract: true;
+    };
+}>;
 
-// Types pour les formulaires
-export interface ContractFormClause {
+// Types pour les formulaires et composants
+type BaseParams = {
+    action: 'create' | 'edit' | 'view';
+};
+
+type ActionParams = BaseParams & {
+    action: 'edit' | 'view';
     id: string;
-    title: string;
-    content: string;
-    category: string;
-    order: number;
-    createdAt: string;
-    updatedAt: string;
+};
+
+type CreateParams = BaseParams & {
+    action: 'create';
+};
+
+export type ContractFormProps = {
+    params: ActionParams | CreateParams;
+    searchParams: {
+        employeeId?: string;
+    };
+};
+
+export interface ContractFormClientProps {
+    action: string;
+    initialData: {
+        clauses: Prisma.ClauseGetPayload<{}>[];
+        employees: Prisma.EmployeeGetPayload<{}>[];
+        contract: ContractWithRelations | null;
+    };
+    employeeId?: string;
+    contractId?: string;
 }
 
-export interface ContractFormData {
-    type: string;
-    startDate: string;
-    endDate?: string;
-    employeeId: string;
-    selectedClauses: ContractFormClause[];
-}
-
-// Types pour les composants
-export interface DraggableClause {
-    id: string;
-    title: string;
-    content: string;
-    category: string;
-    order: number;
-    createdAt: Date;
-    updatedAt: Date;
-    userId: string;
-}
-
-export interface DraggableClauseItem {
-    id: string;
-    title: string;
-    content: string;
-    category: string;
-    order: number;
-    createdAt: string | Date;
-    updatedAt: string | Date;
+export interface ContractFormUIProps {
+    form: UseFormReturn<ContractFormData>;
+    isViewMode: boolean;
+    isEditing: boolean;
+    onSubmit: (data: ContractFormData) => Promise<void>;
+    availableClauses: Prisma.ClauseGetPayload<{}>[];
+    employees: Prisma.EmployeeGetPayload<{}>[];
+    contractId?: string;
 }

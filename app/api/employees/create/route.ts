@@ -4,58 +4,61 @@ import { employeeSchema } from '@/app/_lib/validations';
 import { Prisma } from '@prisma/client';
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
+import { ZodError } from 'zod';
 
 export async function POST(request: Request) {
     try {
-        const sessionData = await auth.api.getSession({
+        const session = await auth.api.getSession({
             headers: await headers(),
         });
 
-        if (!sessionData?.session?.userId) {
-            return NextResponse.json(
-                { error: 'Non authentifié' },
-                { status: 401 }
-            );
+        if (!session?.user) {
+            return new NextResponse('Non autorisé', { status: 401 });
         }
 
-        // Récupérer l'organisation active
+        // Récupérer l'organisation active de l'utilisateur
         const user = await prisma.user.findUnique({
-            where: { id: sessionData.session.userId },
+            where: { id: session.user.id },
             select: { activeOrganizationId: true },
         });
 
         if (!user?.activeOrganizationId) {
-            return NextResponse.json(
-                { error: 'Aucune organisation active' },
-                { status: 400 }
-            );
+            return new NextResponse('Organisation non trouvée', {
+                status: 400,
+            });
         }
 
-        const body = await request.json();
-        const validatedData = employeeSchema.parse(body);
+        const json = await request.json();
+        if (!json) {
+            return new NextResponse('Données manquantes', { status: 400 });
+        }
+
+        // Validation des données
+        const validatedData = employeeSchema.parse(json);
 
         const newEmployee = await prisma.employee.create({
             data: {
                 ...validatedData,
                 birthdate: new Date(validatedData.birthdate),
+                userId: session.user.id,
                 organizationId: user.activeOrganizationId,
-                userId: sessionData.session.userId,
             },
         });
 
         return NextResponse.json(newEmployee);
-    } catch (error: any) {
-        console.error('Erreur lors de la création:', error);
-
-        // Erreur de validation Zod
-        if (error.name === 'ZodError') {
+    } catch (error) {
+        // Gestion spécifique des erreurs Zod
+        if (error instanceof ZodError) {
             return NextResponse.json(
-                { error: 'Données invalides', issues: error.issues },
+                {
+                    error: 'Validation failed',
+                    details: error.errors,
+                },
                 { status: 400 }
             );
         }
 
-        // Erreur Prisma (ex: contrainte unique)
+        // Gestion des erreurs Prisma
         if (error instanceof Prisma.PrismaClientKnownRequestError) {
             if (error.code === 'P2002') {
                 return NextResponse.json(
@@ -67,10 +70,10 @@ export async function POST(request: Request) {
             }
         }
 
-        // Autres erreurs
-        return NextResponse.json(
-            { error: 'Erreur lors de la création' },
-            { status: 500 }
-        );
+        // Pour les autres types d'erreurs
+        const errorMessage =
+            error instanceof Error ? error.message : 'Une erreur est survenue';
+
+        return NextResponse.json({ error: errorMessage }, { status: 500 });
     }
 }
