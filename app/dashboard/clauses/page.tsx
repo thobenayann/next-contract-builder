@@ -1,8 +1,9 @@
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
 import { prisma } from '@/app/_lib/db';
-import { getUserSession } from '@/app/_lib/getUserSession';
+import { getSession } from '@/app/_lib/session';
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/ui/loading';
 import { PageTransition } from '@/components/ui/transition';
@@ -10,10 +11,28 @@ import { ClauseWithAuthor, columns } from './components/columns';
 import { DataTable } from './components/data-table';
 
 const ClausesPage = async () => {
-    const session = await getUserSession();
-    const currentUserId = session?.id;
+    const session = await getSession();
+    const currentUserId = session?.userId;
 
+    // Récupérer l'utilisateur avec son organisation active
+    const user = await prisma.user.findUnique({
+        where: { id: currentUserId },
+        select: {
+            activeOrganization: true,
+        },
+    });
+
+    if (!user?.activeOrganization) {
+        redirect('/dashboard/organizations');
+    }
+
+    const activeOrgId = user.activeOrganization.id;
+
+    // Récupérer les clauses de l'organisation courante
     const clauses = await prisma.clause.findMany({
+        where: {
+            organizationId: activeOrgId,
+        },
         include: {
             user: {
                 select: {
