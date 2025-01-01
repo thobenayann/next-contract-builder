@@ -8,6 +8,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { authClient } from '@/app/_lib/auth-client';
+
 import { cn } from '@/app/_lib/utils';
 import {
     SignUpInput,
@@ -56,43 +57,32 @@ export const SignUpForm = ({
         try {
             setIsLoading(true);
 
-            // Inscription de l'utilisateur
-            const signUpResult = await authClient.signUp.email({
-                email: data.email,
-                password: data.password,
-                name: data.name,
-            });
-
-            if (signUpResult.error) {
-                throw new Error(signUpResult.error.message);
-            }
-
-            // Se connecter après l'inscription
-            const signInResult = await authClient.signIn.email({
-                email: data.email,
-                password: data.password,
-            });
-
-            if (signInResult.error) {
-                throw new Error(signInResult.error.message);
-            }
-
-            // Créer l'organisation via l'API
-            const response = await fetch('/api/organizations/create', {
+            const response = await fetch('/api/auth/sign-up', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    name: data.organization.name,
-                    slug: data.organization.name
-                        .toLowerCase()
-                        .replace(/\s+/g, '-'),
-                }),
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data),
             });
+
+            const result = await response.json();
 
             if (!response.ok) {
-                throw new Error("Erreur lors de la création de l'organisation");
+                if (response.status === 409) {
+                    if (result.code === 'USER_EXISTS') {
+                        form.setError('email', {
+                            message: 'Un compte existe déjà avec cet email',
+                        });
+                    } else if (result.code === 'ORG_EXISTS') {
+                        toast({
+                            title: 'Organisation déjà existante',
+                            description: result.ownerEmail
+                                ? `Cette organisation existe déjà. Contactez l'administrateur (${result.ownerEmail}) pour la rejoindre.`
+                                : "Cette organisation existe déjà. Contactez l'administrateur pour la rejoindre.",
+                            variant: 'error',
+                        });
+                    }
+                    return;
+                }
+                throw new Error(result.error || "Erreur lors de l'inscription");
             }
 
             toast({
@@ -101,9 +91,14 @@ export const SignUpForm = ({
                 variant: 'success',
             });
 
+            // Se connecter après l'inscription
+            const signInResult = await authClient.signIn.email({
+                email: data.email,
+                password: data.password,
+            });
+
             router.push('/dashboard');
         } catch (error) {
-            setIsLoading(false);
             toast({
                 title: 'Erreur',
                 description:
@@ -112,6 +107,8 @@ export const SignUpForm = ({
                         : "Une erreur s'est produite",
                 variant: 'error',
             });
+        } finally {
+            setIsLoading(false);
         }
     };
 
