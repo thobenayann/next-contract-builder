@@ -9,11 +9,21 @@ export async function POST(request: Request) {
             headers: await headers(),
         });
 
-        if (!sessionData?.session?.userId) {
-            return NextResponse.json(null, { status: 401 });
+        if (!sessionData?.user?.id) {
+            return NextResponse.json(
+                { error: 'Non authentifié' },
+                { status: 401 }
+            );
         }
 
         const { name, slug } = await request.json();
+
+        if (!name || !slug) {
+            return NextResponse.json(
+                { error: 'Données manquantes' },
+                { status: 400 }
+            );
+        }
 
         // Transaction pour créer l'organisation et mettre à jour la session
         const result = await prisma.$transaction(async (tx) => {
@@ -24,31 +34,36 @@ export async function POST(request: Request) {
                     slug,
                     members: {
                         create: {
-                            userId: sessionData.session.userId,
+                            userId: sessionData.user.id,
                             role: 'owner',
                         },
                     },
                 },
             });
 
-            // Mettre à jour la session
-            await tx.session.update({
-                where: { id: sessionData.session.id },
+            // Mettre à jour l'utilisateur
+            await tx.user.update({
+                where: { id: sessionData.user.id },
                 data: { activeOrganizationId: organization.id },
             });
 
-            // Mettre à jour l'utilisateur
-            await tx.user.update({
-                where: { id: sessionData.session.userId },
-                data: { activeOrganizationId: organization.id },
-            });
+            // Mettre à jour la session active si elle existe
+            if (sessionData.session?.id) {
+                await tx.session.update({
+                    where: { id: sessionData.session.id },
+                    data: { activeOrganizationId: organization.id },
+                });
+            }
 
             return organization;
         });
 
         return NextResponse.json({ organization: result });
     } catch (error) {
-        console.error('Error creating organization:', error);
+        if (error instanceof Error) {
+            return NextResponse.json({ error: error.message }, { status: 500 });
+        }
+
         return NextResponse.json(
             { error: 'Internal Server Error' },
             { status: 500 }
