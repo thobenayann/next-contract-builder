@@ -1,6 +1,7 @@
 import ContractForm from '../../[action]/[id]/page';
 
-const ViewContractPage = async ({ params }: { params: { id: string } }) => {
+const ViewContractPage = async (props: { params: Promise<{ id: string }> }) => {
+    const params = await props.params;
     const resolvedParams = await Promise.resolve(params);
 
     return (

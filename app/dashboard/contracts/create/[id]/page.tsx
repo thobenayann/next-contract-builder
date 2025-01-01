@@ -1,8 +1,10 @@
 import ContractForm from '../../[action]/[id]/page';
 
-const CreateContractPage = async ({ params }: { params: { id: string } }) => {
-    const resolvedParams = await params;
-    const resolvedId = resolvedParams.id;
+const CreateContractPage = async (props: {
+    params: Promise<{ id: string }>;
+}) => {
+    const params = await props.params;
+    const resolvedId = params.id;
 
     return (
         <ContractForm

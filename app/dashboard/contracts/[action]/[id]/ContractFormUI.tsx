@@ -1,10 +1,10 @@
+import { ContractFormUIProps } from '@/app/_lib/types';
 import { PageTransition } from '@/components/ui/transition';
 import { FormProvider } from 'react-hook-form';
 import { ClausesSection } from './ClausesSection';
 import { FormActions } from './FormActions';
 import { FormFields } from './FormFields';
 import { FormHeader } from './FormHeader';
-import { ContractFormUIProps } from './types';
 
 export const ContractFormUI = ({
     form,
