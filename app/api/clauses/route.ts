@@ -1,55 +1,68 @@
+import { prisma } from '@/app/_lib/db';
+import { getSession } from '@/app/_lib/session';
 import { NextResponse } from 'next/server';
 
-import { auth } from '@/auth';
-import { prisma } from '@/lib/db';
-
-export const runtime = 'nodejs';
-
-export async function POST(request: Request) {
-    const session = await auth();
-    if (!session?.user?.id) {
-        return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
-    }
-
+export async function GET() {
     try {
-        const data = await request.json();
-        const lastClause = await prisma.clause.findFirst({
-            orderBy: { order: 'desc' },
-            where: { userId: session.user.id },
-        });
+        const session = await getSession();
+        if (!session?.userId) {
+            return NextResponse.json(
+                { error: 'Non authentifié' },
+                { status: 401 }
+            );
+        }
 
-        const newClause = await prisma.clause.create({
-            data: {
-                ...data,
-                userId: session.user.id,
-                order: lastClause ? lastClause.order + 1 : 0,
+        // Récupérer l'organisation active de l'utilisateur
+        const user = await prisma.user.findUnique({
+            where: { id: session.userId },
+            select: {
+                activeOrganization: {
+                    include: {
+                        members: {
+                            select: { userId: true },
+                        },
+                    },
+                },
             },
         });
 
-        return NextResponse.json(newClause);
-    } catch (error) {
-        console.error('Erreur lors de la création:', error);
-        return NextResponse.json(
-            { error: 'Erreur lors de la création' },
-            { status: 500 }
+        if (!user?.activeOrganization) {
+            return NextResponse.json(
+                { error: 'Aucune organisation active' },
+                { status: 400 }
+            );
+        }
+
+        // Récupérer les IDs des membres de l'organisation
+        const organizationMemberIds = user.activeOrganization.members.map(
+            (m) => m.userId
         );
-    }
-}
 
-export async function GET() {
-    const session = await auth();
-    if (!session?.user?.id) {
-        return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
-    }
-
-    try {
+        // Récupérer toutes les clauses des membres de l'organisation
         const clauses = await prisma.clause.findMany({
-            where: { userId: session.user.id },
+            where: {
+                userId: { in: organizationMemberIds },
+            },
+            include: {
+                user: {
+                    select: {
+                        name: true,
+                    },
+                },
+            },
             orderBy: { order: 'asc' },
         });
-        return NextResponse.json(clauses);
+
+        const formattedClauses = clauses.map((clause) => ({
+            ...clause,
+            isOwner: clause.userId === session.userId,
+            authorName: clause.user.name,
+            user: undefined,
+        }));
+
+        return NextResponse.json(formattedClauses);
     } catch (error) {
-        console.error('Erreur lors de la récupération:', error);
+        console.error('Erreur:', error);
         return NextResponse.json(
             { error: 'Erreur lors de la récupération' },
             { status: 500 }

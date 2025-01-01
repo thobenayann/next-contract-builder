@@ -11,78 +11,100 @@ import {
 
 interface EmailTemplateProps {
     magicLink: string;
+    type?: 'reset-password' | 'verify-email' | 'organization-invitation';
+    user?: {
+        name: string;
+        email: string;
+    };
+    organization?: {
+        name: string;
+    };
 }
 
-export const EmailTemplate = ({ magicLink }: EmailTemplateProps) => (
-    <Html>
-        <Head />
-        <Preview>Connectez-vous à votre compte</Preview>
-        <Body
-            style={{
-                backgroundColor: '#f6f9fc',
-                fontFamily:
-                    '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Ubuntu,sans-serif',
-            }}
-        >
-            <Container
-                style={{
-                    backgroundColor: '#ffffff',
-                    border: '1px solid #f0f0f0',
-                    borderRadius: '5px',
-                    boxShadow: '0 5px 10px rgba(20,50,70,.2)',
-                    marginTop: '20px',
-                    maxWidth: '600px',
-                    padding: '48px',
-                }}
-            >
-                <Section>
-                    <Text
-                        style={{
-                            fontSize: '16px',
-                            lineHeight: '26px',
-                            marginBottom: '24px',
-                        }}
-                    >
-                        Bonjour,
-                    </Text>
-                    <Text
-                        style={{
-                            fontSize: '16px',
-                            lineHeight: '26px',
-                            marginBottom: '24px',
-                        }}
-                    >
-                        Cliquez sur le bouton ci-dessous pour vous connecter à
-                        votre compte :
-                    </Text>
-                    <Button
-                        href={magicLink}
-                        style={{
-                            backgroundColor: '#5046e4',
-                            borderRadius: '5px',
-                            color: '#fff',
-                            display: 'inline-block',
-                            fontSize: '16px',
-                            fontWeight: 'bold',
-                            padding: '12px 24px',
-                            textDecoration: 'none',
-                        }}
-                    >
-                        Se connecter
-                    </Button>
-                    <Text
-                        style={{
-                            color: '#666666',
-                            fontSize: '14px',
-                            lineHeight: '24px',
-                            marginTop: '24px',
-                        }}
-                    >
-                        Si vous n&apos;avez pas demandé cette connexion, vous
-                        pouvez ignorer cet email.
-                    </Text>
-                </Section>
-            </Container>
-        </Body>
-    </Html>
-);
+export const EmailTemplate = ({
+    magicLink,
+    type = 'verify-email',
+    user,
+    organization,
+}: EmailTemplateProps) => {
+    let previewText, title, description, buttonText;
+
+    switch (type) {
+        case 'reset-password':
+            previewText = 'Réinitialisez votre mot de passe';
+            title = `Bonjour ${user?.name},`;
+            description =
+                'Vous avez demandé à réinitialiser votre mot de passe. Cliquez sur le bouton ci-dessous pour procéder au changement.';
+            buttonText = 'Réinitialiser le mot de passe';
+            break;
+        case 'organization-invitation':
+            previewText = 'Invitation à rejoindre une organisation';
+            title = `Bonjour,`;
+            description = `${user?.name} vous invite à rejoindre l'organisation "${organization?.name}" sur Acme Inc. Cliquez sur le bouton ci-dessous pour accepter l'invitation.`;
+            buttonText = "Accepter l'invitation";
+            break;
+        default:
+            previewText = 'Vérifiez votre adresse email';
+            title = 'Bienvenue !';
+            description =
+                'Cliquez sur le bouton ci-dessous pour vérifier votre adresse email.';
+            buttonText = 'Vérifier mon email';
+    }
+
+    return (
+        <Html>
+            <Head />
+            <Preview>{previewText}</Preview>
+            <Body style={main}>
+                <Container>
+                    <Section>
+                        <Text style={heading}>{title}</Text>
+                        <Text style={paragraph}>{description}</Text>
+                        <Button style={button} href={magicLink}>
+                            {buttonText}
+                        </Button>
+                        <Text style={paragraph}>
+                            {type === 'reset-password'
+                                ? "Si vous n'avez pas demandé à réinitialiser votre mot de passe, vous pouvez ignorer cet email."
+                                : type === 'organization-invitation'
+                                ? "Si vous n'avez pas demandé à rejoindre cette organisation, vous pouvez ignorer cet email."
+                                : "Si vous n'avez pas demandé cette vérification, vous pouvez ignorer cet email."}
+                        </Text>
+                    </Section>
+                </Container>
+            </Body>
+        </Html>
+    );
+};
+
+const main = {
+    backgroundColor: '#ffffff',
+    fontFamily:
+        '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen-Sans,Ubuntu,Cantarell,"Helvetica Neue",sans-serif',
+};
+
+const heading = {
+    fontSize: '32px',
+    lineHeight: '1.3',
+    fontWeight: '700',
+    color: '#484848',
+};
+
+const paragraph = {
+    fontSize: '16px',
+    lineHeight: '1.4',
+    color: '#484848',
+};
+
+const button = {
+    backgroundColor: '#5046e4',
+    borderRadius: '6px',
+    color: '#fff',
+    fontSize: '16px',
+    textDecoration: 'none',
+    textAlign: 'center' as const,
+    display: 'block',
+    padding: '12px 16px',
+    marginTop: '24px',
+    marginBottom: '24px',
+};

@@ -1,68 +1,80 @@
 'use client';
 
-import { useState } from 'react';
-
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2 } from 'lucide-react';
-import { signIn } from 'next-auth/react';
-// eslint-disable-next-line import/order
 import Link from 'next/link';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
 
+import { authClient } from '@/app/_lib/auth-client';
+import { cn } from '@/app/_lib/utils';
+import {
+    SignInInput,
+    signInSchema,
+} from '@/app/_lib/validations/schemas/auth.schema';
 import { Button } from '@/components/ui/button';
 import {
     Card,
     CardContent,
     CardDescription,
+    CardFooter,
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import {
+    Form,
+    FormControl,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
+} from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
 
 export const LoginForm = ({
     className,
     ...props
 }: React.ComponentPropsWithoutRef<'div'>) => {
-    const [email, setEmail] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const { toast } = useToast();
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const form = useForm<SignInInput>({
+        resolver: zodResolver(signInSchema),
+        defaultValues: {
+            email: '',
+            password: '',
+        },
+    });
+
+    async function onSubmit(values: SignInInput) {
         setIsLoading(true);
+        const { email, password } = values;
 
         try {
-            const result = await signIn('email', {
+            const { data, error } = await authClient.signIn.email({
                 email,
-                redirect: false,
+                password,
+                callbackURL: '/dashboard',
             });
 
-            if (result?.error) {
-                toast({
-                    title: 'Erreur',
-                    description: "Une erreur s'est produite",
-                    variant: 'error',
-                });
-            } else {
-                toast({
-                    title: 'Email envoyé',
-                    description:
-                        'Vérifiez votre boîte mail pour vous connecter',
-                    variant: 'default',
-                });
-            }
-        } catch (error) {
-            console.error(error);
+            if (error) throw error;
+
+            form.reset();
+            toast({
+                title: 'Connexion réussie',
+                description: 'Vous allez être redirigé...',
+            });
+        } catch (error: any) {
             toast({
                 title: 'Erreur',
-                description: "Une erreur s'est produite",
+                description: error.message,
                 variant: 'error',
             });
         } finally {
             setIsLoading(false);
         }
-    };
+    }
 
     return (
         <div className={cn('flex flex-col gap-6', className)} {...props}>
@@ -76,24 +88,57 @@ export const LoginForm = ({
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <form onSubmit={handleSubmit}>
-                        <div className='grid gap-6'>
-                            <div className='grid gap-2'>
-                                <Label
-                                    htmlFor='email'
-                                    className='text-gray-300'
+                    <Form {...form}>
+                        <form
+                            onSubmit={form.handleSubmit(onSubmit)}
+                            className='space-y-4'
+                        >
+                            <FormField
+                                control={form.control}
+                                name='email'
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className='text-gray-300'>
+                                            Email
+                                        </FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                {...field}
+                                                placeholder='m@example.com'
+                                                className='border-white/10 bg-white/5 text-white placeholder:text-gray-500'
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name='password'
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className='text-gray-300'>
+                                            Mot de passe
+                                        </FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                {...field}
+                                                type='password'
+                                                placeholder='Votre mot de passe'
+                                                className='border-white/10 bg-white/5 text-white placeholder:text-gray-500'
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <div className='flex items-center justify-between'>
+                                <Link
+                                    href='/auth/forgot-password'
+                                    className='text-sm text-muted-foreground hover:text-primary'
                                 >
-                                    Email
-                                </Label>
-                                <Input
-                                    id='email'
-                                    type='email'
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    placeholder='m@example.com'
-                                    required
-                                    className='border-white/10 bg-white/5 text-white placeholder:text-gray-500'
-                                />
+                                    Mot de passe oublié ?
+                                </Link>
                             </div>
                             <Button
                                 type='submit'
@@ -103,24 +148,26 @@ export const LoginForm = ({
                                 {isLoading ? (
                                     <>
                                         <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-                                        Envoi en cours...
+                                        Connexion en cours...
                                     </>
                                 ) : (
                                     'Se connecter'
                                 )}
                             </Button>
-                            <div className='text-center text-sm text-gray-400'>
-                                Pas encore de compte ?{' '}
-                                <Link
-                                    href='/auth/signup'
-                                    className='text-purple-400 underline underline-offset-4 hover:text-purple-300'
-                                >
-                                    Créer un compte
-                                </Link>
-                            </div>
-                        </div>
-                    </form>
+                        </form>
+                    </Form>
                 </CardContent>
+                <CardFooter className='flex justify-center'>
+                    <p className='text-sm text-gray-400'>
+                        Pas encore de compte ?{' '}
+                        <Link
+                            href='/auth/sign-up'
+                            className='text-purple-400 underline underline-offset-4 hover:text-purple-300'
+                        >
+                            Créer un compte
+                        </Link>
+                    </p>
+                </CardFooter>
             </Card>
             <div className='text-balance text-center text-xs text-gray-500'>
                 En continuant, vous acceptez nos{' '}

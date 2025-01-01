@@ -1,14 +1,18 @@
 'use client';
 
-import { useState } from 'react';
-
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2 } from 'lucide-react';
-import { signIn } from 'next-auth/react';
-// eslint-disable-next-line import/order
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 
+import { authClient } from '@/app/_lib/auth-client';
+import { cn } from '@/app/_lib/utils';
+import {
+    SignUpInput,
+    signUpSchema,
+} from '@/app/_lib/validations/schemas/auth.schema';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -27,8 +31,6 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
-import { SignUpInput, signUpSchema } from '@/lib/validations/auth.schema';
 
 export const SignUpForm = ({
     className,
@@ -36,47 +38,80 @@ export const SignUpForm = ({
 }: React.ComponentPropsWithoutRef<'div'>) => {
     const [isLoading, setIsLoading] = useState(false);
     const { toast } = useToast();
+    const router = useRouter();
 
     const form = useForm<SignUpInput>({
         resolver: zodResolver(signUpSchema),
         defaultValues: {
             name: '',
             email: '',
+            password: '',
+            organization: {
+                name: '',
+            },
         },
     });
 
     const onSubmit = async (data: SignUpInput) => {
-        setIsLoading(true);
-
         try {
-            const result = await signIn('email', {
+            setIsLoading(true);
+
+            // Inscription de l'utilisateur
+            const signUpResult = await authClient.signUp.email({
                 email: data.email,
+                password: data.password,
                 name: data.name,
-                redirect: false,
             });
 
-            if (result?.error) {
-                toast({
-                    title: 'Erreur',
-                    description: "Une erreur s'est produite",
-                    variant: 'error',
-                });
-            } else {
-                toast({
-                    title: 'Email envoyé',
-                    description:
-                        'Vérifiez votre boîte mail pour vous connecter',
-                });
+            if (signUpResult.error) {
+                throw new Error(signUpResult.error.message);
             }
+
+            // Se connecter après l'inscription
+            const signInResult = await authClient.signIn.email({
+                email: data.email,
+                password: data.password,
+            });
+
+            if (signInResult.error) {
+                throw new Error(signInResult.error.message);
+            }
+
+            // Créer l'organisation via l'API
+            const response = await fetch('/api/organizations/create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    name: data.organization.name,
+                    slug: data.organization.name
+                        .toLowerCase()
+                        .replace(/\s+/g, '-'),
+                }),
+            });
+
+            if (!response.ok) {
+                throw new Error("Erreur lors de la création de l'organisation");
+            }
+
+            toast({
+                title: 'Compte créé avec succès ! 🎉',
+                description: 'Redirection vers le tableau de bord...',
+                variant: 'success',
+            });
+
+            router.push('/dashboard');
         } catch (error) {
-            console.error(error);
+            setIsLoading(false);
             toast({
                 title: 'Erreur',
-                description: "Une erreur s'est produite",
+                description:
+                    error instanceof Error
+                        ? error.message
+                        : "Une erreur s'est produite",
                 variant: 'error',
             });
-        } finally {
-            setIsLoading(false);
         }
     };
 
@@ -136,6 +171,45 @@ export const SignUpForm = ({
                                     </FormItem>
                                 )}
                             />
+                            <FormField
+                                control={form.control}
+                                name='password'
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className='text-gray-300'>
+                                            Mot de passe
+                                        </FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                {...field}
+                                                type='password'
+                                                placeholder='********'
+                                                className='border-white/10 bg-white/5 text-white placeholder:text-gray-500'
+                                            />
+                                        </FormControl>
+                                        <FormMessage className='text-red-400' />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name='organization.name'
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className='text-gray-300'>
+                                            Nom de votre organisation
+                                        </FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                {...field}
+                                                placeholder='Acme Inc.'
+                                                className='border-white/10 bg-white/5 text-white placeholder:text-gray-500'
+                                            />
+                                        </FormControl>
+                                        <FormMessage className='text-red-400' />
+                                    </FormItem>
+                                )}
+                            />
                             <Button
                                 type='submit'
                                 className='w-full bg-purple-500 hover:bg-purple-600'
@@ -153,7 +227,7 @@ export const SignUpForm = ({
                             <div className='text-center text-sm text-gray-400'>
                                 Déjà un compte ?{' '}
                                 <Link
-                                    href='/auth/signin'
+                                    href='/auth/sign-in'
                                     className='text-purple-400 underline underline-offset-4 hover:text-purple-300'
                                 >
                                     Se connecter

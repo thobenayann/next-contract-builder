@@ -1,15 +1,43 @@
+import { auth } from '@/app/_lib/auth';
+import { prisma } from '@/app/_lib/db';
+import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
-
-import { prisma } from '@/lib/db';
 
 export async function GET(
     _request: Request,
     props: { params: Promise<{ id: string }> }
 ) {
-    const params = await props.params;
     try {
-        const employee = await prisma.employee.findUnique({
-            where: { id: params.id },
+        const params = await props.params;
+        const sessionData = await auth.api.getSession({
+            headers: await headers(),
+        });
+
+        if (!sessionData?.session?.userId) {
+            return NextResponse.json(
+                { error: 'Non authentifié' },
+                { status: 401 }
+            );
+        }
+
+        // Récupérer l'organisation active
+        const user = await prisma.user.findUnique({
+            where: { id: sessionData.session.userId },
+            select: { activeOrganizationId: true },
+        });
+
+        if (!user?.activeOrganizationId) {
+            return NextResponse.json(
+                { error: 'Aucune organisation active' },
+                { status: 400 }
+            );
+        }
+
+        const employee = await prisma.employee.findFirst({
+            where: {
+                id: params.id,
+                organizationId: user.activeOrganizationId,
+            },
             include: { contract: true },
         });
 

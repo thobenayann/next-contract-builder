@@ -1,9 +1,15 @@
 'use client';
 
-import { ChevronsUpDown, LogOut, Moon, Sun, User } from 'lucide-react';
-import { signOut, useSession } from 'next-auth/react';
+import {
+    ChevronsUpDown,
+    LogOut,
+    Moon,
+    Sun,
+    User as UserIcon,
+} from 'lucide-react';
 import { useTheme } from 'next-themes';
 
+import { authClient } from '@/app/_lib/auth-client';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
     DropdownMenu,
@@ -19,13 +25,34 @@ import {
     SidebarMenuItem,
     useSidebar,
 } from '@/components/ui/sidebar';
+import { User } from '@prisma/client';
+import { useRouter } from 'next/navigation';
 
-export const NavUser = () => {
-    const { data: session } = useSession();
+interface NavUserProps {
+    userSession: User;
+}
+
+export const NavUser = ({ userSession }: NavUserProps) => {
     const { isMobile } = useSidebar();
     const { theme, setTheme } = useTheme();
+    const router = useRouter();
 
-    if (!session?.user) return null;
+    if (!userSession) return null;
+
+    const handleLogout = async () => {
+        try {
+            await authClient.signOut({
+                fetchOptions: {
+                    onSuccess: () => {
+                        router.push('/auth/sign-in');
+                    },
+                },
+            });
+        } catch (error) {
+            console.error('Failed to logout user:', error);
+            throw new Error('Failed to logout user.');
+        }
+    };
 
     return (
         <SidebarMenu>
@@ -38,15 +65,15 @@ export const NavUser = () => {
                         >
                             <Avatar className='h-8 w-8 rounded-lg'>
                                 <AvatarFallback className='rounded-lg'>
-                                    <User className='size-4' />
+                                    <UserIcon className='size-4' />
                                 </AvatarFallback>
                             </Avatar>
                             <div className='grid flex-1 text-left text-sm leading-tight'>
                                 <span className='truncate font-semibold'>
-                                    {session.user.name || 'Utilisateur'}
+                                    {userSession.name ?? 'Utilisateur'}
                                 </span>
                                 <span className='truncate text-xs'>
-                                    {session.user.email}
+                                    {userSession.email ?? 'email@example.com'}
                                 </span>
                             </div>
                             <ChevronsUpDown className='ml-auto size-4' />
@@ -62,15 +89,16 @@ export const NavUser = () => {
                             <div className='flex items-center gap-2 px-1 py-1.5 text-left text-sm'>
                                 <Avatar className='h-8 w-8 rounded-lg'>
                                     <AvatarFallback className='rounded-lg'>
-                                        <User className='size-4' />
+                                        <UserIcon className='size-4' />
                                     </AvatarFallback>
                                 </Avatar>
                                 <div className='grid flex-1 text-left text-sm leading-tight'>
                                     <span className='truncate font-semibold'>
-                                        {session.user.name || 'Utilisateur'}
+                                        {userSession.name ?? 'Utilisateur'}
                                     </span>
                                     <span className='truncate text-xs'>
-                                        {session.user.email}
+                                        {userSession.email ??
+                                            'email@example.com'}
                                     </span>
                                 </div>
                             </div>
@@ -93,7 +121,7 @@ export const NavUser = () => {
                                 </>
                             )}
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => signOut()}>
+                        <DropdownMenuItem onClick={handleLogout}>
                             <LogOut className='mr-2 size-4' />
                             Se déconnecter
                         </DropdownMenuItem>

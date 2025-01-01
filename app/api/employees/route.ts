@@ -1,79 +1,78 @@
-import { Prisma } from '@prisma/client';
+import { auth } from '@/app/_lib/auth';
+import { prisma } from '@/app/_lib/db';
+import { employeeSchema } from '@/app/_lib/validations';
+import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
-
-import { prisma } from '@/lib/db';
-import { formatSSN } from '@/lib/utils';
-import { employeeSchema } from '@/lib/validations/employee';
 
 export async function POST(request: Request) {
     try {
-        const data = await request.json();
-
-        // Validation avec Zod
-        const validationResult = employeeSchema.safeParse(data);
-
-        if (!validationResult.success) {
-            return NextResponse.json(
-                {
-                    error: 'Données invalides',
-                    issues: validationResult.error.issues,
-                },
-                { status: 400 }
-            );
-        }
-
-        const formattedSSN = formatSSN(validationResult.data.ssn);
-
-        // Vérification si le SSN existe déjà
-        const existingEmployee = await prisma.employee.findFirst({
-            where: { ssn: formattedSSN },
+        const sessionData = await auth.api.getSession({
+            headers: await headers(),
         });
 
-        if (existingEmployee) {
+        if (!sessionData?.session?.userId) {
             return NextResponse.json(
-                {
-                    error: 'Ce numéro de sécurité sociale est déjà utilisé',
-                    field: 'ssn',
-                },
+                { error: 'Non authentifié' },
+                { status: 401 }
+            );
+        }
+
+        const user = await prisma.user.findUnique({
+            where: { id: sessionData.session.userId },
+            select: { activeOrganizationId: true },
+        });
+
+        if (!user?.activeOrganizationId) {
+            return NextResponse.json(
+                { error: 'Aucune organisation active' },
                 { status: 400 }
             );
         }
+
+        const body = await request.json();
+        const validatedData = employeeSchema.parse(body);
 
         const newEmployee = await prisma.employee.create({
             data: {
-                ...validationResult.data,
-                ssn: formattedSSN,
-                birthdate: new Date(validationResult.data.birthdate),
-                companyId: '1', // À remplacer par la vraie companyId
+                ...validatedData,
+                organizationId: user.activeOrganizationId,
+                userId: sessionData.session.userId,
             },
         });
 
         return NextResponse.json(newEmployee);
     } catch (error) {
-        console.error('Erreur lors de la création:', error);
-
-        if (error instanceof Prisma.PrismaClientKnownRequestError) {
-            if (error.code === 'P2002') {
-                return NextResponse.json(
-                    {
-                        error: 'Ce numéro de sécurité sociale est déjà utilisé',
-                        field: 'ssn',
-                    },
-                    { status: 400 }
-                );
-            }
-        }
-
-        return NextResponse.json(
-            { error: 'Erreur lors de la création' },
-            { status: 500 }
-        );
+        // ... gestion des erreurs
     }
 }
 
 export async function GET() {
     try {
+        const sessionData = await auth.api.getSession({
+            headers: await headers(),
+        });
+
+        if (!sessionData?.session?.userId) {
+            return NextResponse.json(null, { status: 401 });
+        }
+
+        // Récupérer l'organisation active
+        const user = await prisma.user.findUnique({
+            where: { id: sessionData.session.userId },
+            select: { activeOrganizationId: true },
+        });
+
+        if (!user?.activeOrganizationId) {
+            return NextResponse.json(
+                { error: 'Aucune organisation active' },
+                { status: 400 }
+            );
+        }
+
         const employees = await prisma.employee.findMany({
+            where: {
+                organizationId: user.activeOrganizationId,
+            },
             include: {
                 contract: true,
             },
@@ -81,6 +80,7 @@ export async function GET() {
                 lastName: 'asc',
             },
         });
+
         return NextResponse.json(employees);
     } catch (error) {
         console.error('Erreur lors de la récupération:', error);

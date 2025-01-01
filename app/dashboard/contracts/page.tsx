@@ -1,60 +1,52 @@
-import { Suspense } from 'react';
-
-import Link from 'next/link';
-
+import { prisma } from '@/app/_lib/db';
+import { getSession } from '@/app/_lib/session';
 import { ContractsList } from '@/components/ContractsList';
-import { Button } from '@/components/ui/button';
-import { LoadingSpinner } from '@/components/ui/loading';
-import { PageTransition } from '@/components/ui/transition';
-import { prisma } from '@/lib/db';
 
 const ContractsPage = async () => {
-    const [contracts, employeesCount] = await Promise.all([
-        prisma.contract.findMany({
-            include: {
-                employee: true,
-                clauses: {
-                    include: {
-                        clause: true,
-                    },
-                    orderBy: {
-                        order: 'asc',
-                    },
+    const session = await getSession();
+    if (!session?.userId) return null;
+
+    // Récupérer l'utilisateur avec son organisation active
+    const user = await prisma.user.findUnique({
+        where: { id: session.userId },
+        select: {
+            activeOrganization: true,
+        },
+    });
+
+    if (!user?.activeOrganization) return null;
+
+    // Récupérer les contrats de l'organisation active
+    const contracts = await prisma.contract.findMany({
+        where: {
+            organizationId: user.activeOrganization.id,
+        },
+        include: {
+            employee: true,
+            user: {
+                select: {
+                    name: true,
                 },
             },
-            orderBy: {
-                createdAt: 'desc',
-            },
-        }),
-        prisma.employee.count(),
-    ]);
+        },
+        orderBy: {
+            createdAt: 'desc',
+        },
+    });
+
+    const formattedContracts = contracts.map((contract) => ({
+        ...contract,
+        startDate: contract.startDate.toISOString(),
+        endDate: contract.endDate?.toISOString() || null,
+        isOwner: contract.userId === session.userId,
+        authorName: contract.user.name || 'Utilisateur inconnu',
+        user: undefined,
+    }));
 
     return (
-        <PageTransition>
-            <Suspense fallback={<LoadingSpinner />}>
-                <div className='space-y-6'>
-                    <h1 className='text-3xl font-bold'>Gestion des contrats</h1>
-                    {employeesCount === 0 ? (
-                        <div className='rounded-lg border border-dashed p-8 text-center'>
-                            <h2 className='text-lg font-semibold mb-2'>
-                                Aucun employé n&apos;est enregistré
-                            </h2>
-                            <p className='text-muted-foreground mb-4'>
-                                Vous devez d&apos;abord créer un employé avant
-                                de pouvoir créer un contrat.
-                            </p>
-                            <Button asChild>
-                                <Link href='/dashboard/employees/create'>
-                                    Créer un employé
-                                </Link>
-                            </Button>
-                        </div>
-                    ) : (
-                        <ContractsList initialContracts={contracts} />
-                    )}
-                </div>
-            </Suspense>
-        </PageTransition>
+        <div className='container mx-auto py-6'>
+            <ContractsList initialContracts={formattedContracts} />
+        </div>
     );
 };
 

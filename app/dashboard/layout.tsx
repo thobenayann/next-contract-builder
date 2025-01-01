@@ -12,7 +12,9 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             <AppSidebar />
             <div className='ml-[200px]'>
                 <header className='flex h-14 items-center justify-between border-b px-6'>
-                    <BreadcrumbNav />
+                    <div className='flex items-center gap-4'>
+                        <BreadcrumbNav />
+                    </div>
                     <ModeToggle />
                 </header>
                 <main className='p-6'>{children}</main>

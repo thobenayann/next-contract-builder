@@ -1,9 +1,9 @@
 import { Suspense } from 'react';
 
+import { prisma } from '@/app/_lib/db';
 import { EmployeesList } from '@/components/EmployeesList';
 import { LoadingSpinner } from '@/components/ui/loading';
 import { PageTransition } from '@/components/ui/transition';
-import { prisma } from '@/lib/db';
 
 const EmployeesPage = async () => {
     const employees = await prisma.employee.findMany({

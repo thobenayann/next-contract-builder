@@ -1,8 +1,10 @@
-/* eslint-disable import/no-named-as-default */
+'use client';
+
 import { useEffect } from 'react';
 
 import Bold from '@tiptap/extension-bold';
 import Code from '@tiptap/extension-code';
+import Heading from '@tiptap/extension-heading';
 import Highlight from '@tiptap/extension-highlight';
 import Italic from '@tiptap/extension-italic';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -13,8 +15,10 @@ import StarterKit from '@tiptap/starter-kit';
 import {
     FaBold,
     FaCode,
+    FaHeading,
     FaHighlighter,
     FaItalic,
+    FaParagraph,
     FaStrikethrough,
     FaUnderline,
 } from 'react-icons/fa';
@@ -33,13 +37,24 @@ const TipTapEditor = ({ setContent, initialContent }: TipTapEditorProps) => {
                         class: 'my-2',
                     },
                 },
+                heading: false,
+                bold: false,
+                italic: false,
+                strike: false,
+                code: false,
             }),
-            Bold,
-            Italic,
-            Underline,
-            Strike,
-            Code,
-            Highlight,
+            Heading.configure({
+                levels: [1, 2, 3],
+                HTMLAttributes: {
+                    class: 'font-bold',
+                },
+            }),
+            Bold.configure(),
+            Italic.configure(),
+            Underline.configure(),
+            Strike.configure(),
+            Code.configure(),
+            Highlight.configure(),
             Placeholder.configure({
                 placeholder: 'Commencez à écrire ici...',
                 emptyEditorClass: 'is-editor-empty',
@@ -54,6 +69,7 @@ const TipTapEditor = ({ setContent, initialContent }: TipTapEditorProps) => {
         onUpdate: ({ editor }) => {
             setContent(JSON.stringify(editor.getJSON()));
         },
+        immediatelyRender: false,
     });
 
     useEffect(() => {
@@ -101,6 +117,52 @@ const TipTapEditor = ({ setContent, initialContent }: TipTapEditorProps) => {
     return (
         <div className='border rounded-lg overflow-hidden'>
             <div className='bg-gray-100 p-2 flex space-x-2 border-b'>
+                <div className='flex space-x-2 border-r pr-2 mr-2'>
+                    <ToolbarButton
+                        onClick={() =>
+                            editor.chain().focus().setParagraph().run()
+                        }
+                        isActive={editor.isActive('paragraph')}
+                        icon={<FaParagraph />}
+                        label='Paragraphe'
+                    />
+                    <ToolbarButton
+                        onClick={() =>
+                            editor
+                                .chain()
+                                .focus()
+                                .toggleHeading({ level: 1 })
+                                .run()
+                        }
+                        isActive={editor.isActive('heading', { level: 1 })}
+                        icon={<FaHeading />}
+                        label='Titre 1'
+                    />
+                    <ToolbarButton
+                        onClick={() =>
+                            editor
+                                .chain()
+                                .focus()
+                                .toggleHeading({ level: 2 })
+                                .run()
+                        }
+                        isActive={editor.isActive('heading', { level: 2 })}
+                        icon={<>H2</>}
+                        label='Titre 2'
+                    />
+                    <ToolbarButton
+                        onClick={() =>
+                            editor
+                                .chain()
+                                .focus()
+                                .toggleHeading({ level: 3 })
+                                .run()
+                        }
+                        isActive={editor.isActive('heading', { level: 3 })}
+                        icon={<>H3</>}
+                        label='Titre 3'
+                    />
+                </div>
                 <ToolbarButton
                     onClick={() => editor.chain().focus().toggleBold().run()}
                     isActive={editor.isActive('bold')}
