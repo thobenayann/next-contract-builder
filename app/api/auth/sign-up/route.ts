@@ -7,6 +7,7 @@ import { NextResponse } from 'next/server';
 export async function POST(request: Request) {
     try {
         const data: SignUpInput = await request.json();
+        console.log('Données reçues:', data);
 
         // 1. Vérifier si l'organisation existe déjà
         const existingOrg = await prisma.organization.findUnique({
@@ -54,59 +55,68 @@ export async function POST(request: Request) {
 
         // 3. Si tout est OK, créer l'utilisateur et l'organisation dans une transaction
         const result = await prisma.$transaction(async (tx) => {
-            // Créer l'utilisateur avec auth
-            const signUpResult = await authClient.signUp.email({
-                email: data.email,
-                password: data.password,
-                name: data.name,
-            });
+            try {
+                // Créer l'utilisateur avec auth
+                const signUpResult = await authClient.signUp.email({
+                    email: data.email,
+                    password: data.password,
+                    name: data.name,
+                });
+                console.log('Résultat signup:', signUpResult);
 
-            if (!signUpResult || signUpResult.error) {
-                throw new Error(
-                    signUpResult?.error?.message ||
+                if (!signUpResult || signUpResult.error) {
+                    throw new Error(
+                        signUpResult?.error?.message ||
+                            "Erreur lors de la création de l'utilisateur"
+                    );
+                }
+
+                // Récupérer l'utilisateur créé
+                const user = await tx.user.findUnique({
+                    where: { email: data.email },
+                });
+
+                if (!user) {
+                    throw new Error(
                         "Erreur lors de la création de l'utilisateur"
-                );
-            }
+                    );
+                }
 
-            // Récupérer l'utilisateur créé
-            const user = await tx.user.findUnique({
-                where: { email: data.email },
-            });
-
-            if (!user) {
-                throw new Error("Erreur lors de la création de l'utilisateur");
-            }
-
-            // Créer l'organisation
-            const organization = await tx.organization.create({
-                data: {
-                    name: data.organization.name,
-                    slug: data.organization.name
-                        .toLowerCase()
-                        .replace(/\s+/g, '-'),
-                    members: {
-                        create: {
-                            userId: user.id,
-                            role: 'owner',
+                // Créer l'organisation
+                const organization = await tx.organization.create({
+                    data: {
+                        name: data.organization.name,
+                        slug: data.organization.name
+                            .toLowerCase()
+                            .replace(/\s+/g, '-'),
+                        members: {
+                            create: {
+                                userId: user.id,
+                                role: 'owner',
+                            },
                         },
                     },
-                },
-            });
+                });
 
-            // Mettre à jour l'utilisateur avec l'organisation active
-            const updatedUser = await tx.user.update({
-                where: { id: user.id },
-                data: { activeOrganizationId: organization.id },
-            });
+                // Mettre à jour l'utilisateur avec l'organisation active
+                const updatedUser = await tx.user.update({
+                    where: { id: user.id },
+                    data: { activeOrganizationId: organization.id },
+                });
 
-            return {
-                user: updatedUser,
-                organization,
-            };
+                return {
+                    user: updatedUser,
+                    organization,
+                };
+            } catch (error) {
+                console.error('Erreur dans la transaction:', error);
+                throw error;
+            }
         });
 
         return NextResponse.json(result);
     } catch (error) {
+        console.error('Erreur complète:', error);
         if (error instanceof Prisma.PrismaClientKnownRequestError) {
             if (error.code === 'P2002') {
                 // Violation de contrainte unique
