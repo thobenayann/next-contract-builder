@@ -5,7 +5,13 @@ import { nextCookies } from 'better-auth/next-js';
 import { organization } from 'better-auth/plugins';
 import { ac, admin, member, owner } from './permissions';
 
+if (!process.env.BETTER_AUTH_SECRET) {
+    throw new Error('BETTER_AUTH_SECRET must be set');
+}
+
 export const auth = betterAuth({
+    secret: process.env.BETTER_AUTH_SECRET,
+    baseURL: process.env.BETTER_AUTH_URL,
     database: prismaAdapter(prisma, {
         provider: 'postgresql',
     }),

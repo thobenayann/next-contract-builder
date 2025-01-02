@@ -15,8 +15,7 @@ export default async function middleware(request: NextRequest) {
         return NextResponse.next();
     }
 
-    // Utiliser l'URL de la requête actuelle comme base
-    const baseURL = request.url.split('/api')[0];
+    const baseURL = request.nextUrl.origin;
 
     try {
         const { data: session } = await betterFetch<Session>(
