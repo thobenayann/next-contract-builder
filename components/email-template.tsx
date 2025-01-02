@@ -40,7 +40,7 @@ export const EmailTemplate = ({
         case 'organization-invitation':
             previewText = 'Invitation à rejoindre une organisation';
             title = `Bonjour,`;
-            description = `${user?.name} vous invite à rejoindre l'organisation "${organization?.name}" sur Acme Inc. Cliquez sur le bouton ci-dessous pour accepter l'invitation.`;
+            description = `${user?.name} vous invite à rejoindre l'organisation "${organization?.name}" sur Feather. Cliquez sur le bouton ci-dessous pour accepter l'invitation.`;
             buttonText = "Accepter l'invitation";
             break;
         default:

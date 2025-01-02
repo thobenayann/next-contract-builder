@@ -6,8 +6,8 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-    title: 'Éditeur de clauses',
-    description: 'Éditeur de clauses de contrat avec drag and drop',
+    title: 'Gestion des contrats',
+    description: 'Outil permettant de gérer les contrats de vos entreprises',
 };
 
 const RootLayout = ({ children }: { children: React.ReactNode }) => {

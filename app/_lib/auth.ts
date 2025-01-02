@@ -6,12 +6,10 @@ import { organization } from 'better-auth/plugins';
 import { getBaseUrl } from './auth-client';
 import { ac, admin, member, owner } from './permissions';
 
-if (!process.env.BETTER_AUTH_SECRET) {
-    throw new Error('BETTER_AUTH_SECRET must be set');
-}
-
 export const auth = betterAuth({
-    secret: process.env.NEXT_PUBLIC_BETTER_AUTH_SECRET,
+    secret:
+        process.env.BETTER_AUTH_SECRET ??
+        process.env.NEXT_PUBLIC_BETTER_AUTH_SECRET,
     baseURL: getBaseUrl(),
     database: prismaAdapter(prisma, {
         provider: 'postgresql',

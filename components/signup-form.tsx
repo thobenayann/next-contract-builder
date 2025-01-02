@@ -201,7 +201,7 @@ export const SignUpForm = ({
                                         <FormControl>
                                             <Input
                                                 {...field}
-                                                placeholder='Acme Inc.'
+                                                placeholder='Feather'
                                                 className='border-white/10 bg-white/5 text-white placeholder:text-gray-500'
                                             />
                                         </FormControl>

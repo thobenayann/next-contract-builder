@@ -19,6 +19,7 @@ import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 
 import { cn } from '@/app/_lib/utils';
+import { Logo } from '@/components/ui/logo';
 import { NavUser } from '@/components/ui/nav-user';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { User } from '@prisma/client';
@@ -172,6 +173,9 @@ export const AppSidebarClient = ({ userSession }: AppSidebarClientProps) => {
         <div className='fixed inset-y-0 z-50 flex w-[200px] flex-col'>
             <SidebarProvider>
                 <div className='flex h-full flex-1 flex-col border-r bg-background'>
+                    <div className='flex items-center justify-center p-2'>
+                        <Logo />
+                    </div>
                     <div className='p-2'>
                         <OrganizationSwitcher />
                     </div>
