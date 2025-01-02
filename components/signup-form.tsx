@@ -97,6 +97,8 @@ export const SignUpForm = ({
                 password: data.password,
             });
 
+            console.log('signInResult :', signInResult);
+
             router.push('/dashboard');
         } catch (error) {
             toast({
