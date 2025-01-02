@@ -15,23 +15,32 @@ export default async function middleware(request: NextRequest) {
         return NextResponse.next();
     }
 
-    const baseURL = request.nextUrl.origin;
-    const { data: session } = await betterFetch<Session>(
-        '/api/auth/get-session',
-        {
-            baseURL,
-            headers: {
-                cookie: request.headers.get('cookie') || '',
-            },
+    // Utiliser l'URL de la requête actuelle comme base
+    const baseURL = request.url.split('/api')[0];
+
+    try {
+        const { data: session } = await betterFetch<Session>(
+            '/api/auth/get-session',
+            {
+                baseURL,
+                headers: {
+                    cookie: request.headers.get('cookie') || '',
+                },
+            }
+        );
+
+        if (protectedRoutes.includes(path) && !session) {
+            return NextResponse.redirect(new URL('/auth/sign-in', request.url));
         }
-    );
 
-    if (protectedRoutes.includes(path) && !session) {
-        return NextResponse.redirect(new URL('/auth/sign-in', request.nextUrl));
-    }
-
-    if (publicRoutes.includes(path) && session) {
-        return NextResponse.redirect(new URL('/dashboard', request.nextUrl));
+        if (publicRoutes.includes(path) && session) {
+            return NextResponse.redirect(new URL('/dashboard', request.url));
+        }
+    } catch (error) {
+        // En cas d'erreur de session, rediriger vers la connexion
+        if (protectedRoutes.includes(path)) {
+            return NextResponse.redirect(new URL('/auth/sign-in', request.url));
+        }
     }
 
     return NextResponse.next();
