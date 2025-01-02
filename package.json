@@ -32,6 +32,8 @@
         "@radix-ui/react-tooltip": "^1.1.6",
         "@react-email/components": "0.0.31",
         "@shadcn/ui": "^0.0.4",
+        "@tanstack/react-query": "^5.62.11",
+        "@tanstack/react-query-devtools": "^5.62.11",
         "@tanstack/react-table": "^8.20.6",
         "@tiptap/extension-bold": "^2.8.0",
         "@tiptap/extension-highlight": "^2.8.0",
@@ -65,6 +67,7 @@
         "zod": "^3.24.1"
     },
     "devDependencies": {
+        "@tanstack/eslint-plugin-query": "^5.62.9",
         "@types/node": "^20",
         "@types/react": "19.0.2",
         "@types/react-dom": "19.0.2",

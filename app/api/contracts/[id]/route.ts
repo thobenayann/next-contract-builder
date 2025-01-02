@@ -102,11 +102,18 @@ export async function DELETE(
         });
 
         // Puis supprimer le contrat
-        await prisma.contract.delete({
+        const deletedContract = await prisma.contract.delete({
             where: { id: params.id },
         });
 
-        return NextResponse.json({ success: true });
+        if (!deletedContract) {
+            return NextResponse.json(
+                { error: 'Contrat non trouvé' },
+                { status: 404 }
+            );
+        }
+
+        return new NextResponse(null, { status: 204 });
     } catch (error) {
         console.error('Erreur:', error);
         return NextResponse.json(

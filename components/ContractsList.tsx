@@ -7,6 +7,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
+import { useToast } from '@/app/_lib/hooks/use-toast';
+import { useContracts } from '@/app/_lib/hooks/useContracts';
 import { Button } from '@/components/ui/button';
 import {
     Table,
@@ -16,7 +18,6 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import { useToast } from '@/hooks/use-toast';
 import { DeleteConfirmDialog } from './DeleteConfirmDialog';
 
 interface Contract {
@@ -42,7 +43,8 @@ export const ContractsList = ({
     const router = useRouter();
     const { toast } = useToast();
     const [deleteContract, setDeleteContract] = useState<Contract | null>(null);
-    const [isLoading, setIsLoading] = useState(false);
+    const { deleteContract: deleteContractMutation, isDeleting } =
+        useContracts();
 
     const handleDelete = async (contract: Contract) => {
         if (!contract.isOwner) {
@@ -55,30 +57,8 @@ export const ContractsList = ({
         }
 
         try {
-            setIsLoading(true);
-            const response = await fetch(`/api/contracts/${contract.id}`, {
-                method: 'DELETE',
-            });
-
-            if (!response.ok) {
-                throw new Error('Erreur lors de la suppression');
-            }
-
-            toast({
-                title: 'Succès',
-                description: 'Contrat supprimé avec succès',
-                variant: 'success',
-            });
-
-            router.refresh();
-        } catch (error) {
-            toast({
-                title: 'Erreur',
-                description: 'Erreur lors de la suppression',
-                variant: 'error',
-            });
+            await deleteContractMutation(contract.id);
         } finally {
-            setIsLoading(false);
             setDeleteContract(null);
         }
     };
@@ -209,7 +189,7 @@ export const ContractsList = ({
                 onClose={() => setDeleteContract(null)}
                 onConfirm={() => deleteContract && handleDelete(deleteContract)}
                 title={deleteContract?.employee.firstName || ''}
-                isLoading={isLoading}
+                isLoading={isDeleting}
             />
         </div>
     );

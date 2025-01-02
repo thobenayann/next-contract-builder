@@ -5,12 +5,12 @@ import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
+import { useToast } from '@/app/_lib/hooks/use-toast';
 import { ClauseFormData } from '@/app/_lib/validations/schemas/clause.schema';
 import TipTapEditor from '@/components/TipTapEditor';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PageTransition } from '@/components/ui/transition';
-import { useToast } from '@/hooks/use-toast';
 
 const CreateClausePage = () => {
     const router = useRouter();

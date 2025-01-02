@@ -56,6 +56,7 @@ export interface ContractFormUIProps {
     form: UseFormReturn<ContractFormData>;
     isViewMode: boolean;
     isEditing: boolean;
+    isSubmitting: boolean;
     onSubmit: (data: ContractFormData) => Promise<void>;
     availableClauses: Prisma.ClauseGetPayload<{}>[];
     employees: Prisma.EmployeeGetPayload<{}>[];

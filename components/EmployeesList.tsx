@@ -7,6 +7,7 @@ import { fr } from 'date-fns/locale';
 import { FileText, Pencil, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
+import { useToast } from '@/app/_lib/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import {
     Table,
@@ -16,7 +17,6 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import { useToast } from '@/hooks/use-toast';
 
 import { EmployeeWithContract } from '@/app/_lib/types';
 import { DeleteConfirmDialog } from './DeleteConfirmDialog';

@@ -1,14 +1,15 @@
 'use client';
 
+import { useToast } from '@/app/_lib/hooks/use-toast';
 import { ContractFormClientProps } from '@/app/_lib/types';
 import { ContractFormData, contractSchema } from '@/app/_lib/validations';
-import { useToast } from '@/hooks/use-toast';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useMutation } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { ContractFormUI } from './ContractFormUI';
 
-const ContractFormClient = ({
+export const ContractFormClient = ({
     action,
     initialData,
     employeeId,
@@ -18,6 +19,76 @@ const ContractFormClient = ({
     const { toast } = useToast();
     const isViewMode = action === 'view';
     const isEditing = action === 'edit';
+
+    const { mutate: createContract, isPending: isCreating } = useMutation({
+        mutationFn: async (data: ContractFormData) => {
+            const response = await fetch('/api/contracts/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data),
+            });
+
+            const result = await response.json();
+            if (!response.ok) {
+                throw new Error(result.message || result.error);
+            }
+            return result;
+        },
+        onSuccess: () => {
+            toast({
+                title: 'Succès',
+                description: 'Contrat créé avec succès 🎉',
+                variant: 'success',
+            });
+            router.push('/dashboard/contracts');
+            router.refresh();
+        },
+        onError: (error: Error) => {
+            toast({
+                title: 'Erreur',
+                description: error.message,
+                variant: 'error',
+            });
+        },
+    });
+
+    const { mutate: updateContract, isPending: isUpdating } = useMutation({
+        mutationFn: async ({
+            id,
+            data,
+        }: {
+            id: string;
+            data: ContractFormData;
+        }) => {
+            const response = await fetch(`/api/contracts/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data),
+            });
+
+            const result = await response.json();
+            if (!response.ok) {
+                throw new Error(result.message || result.error);
+            }
+            return result;
+        },
+        onSuccess: () => {
+            toast({
+                title: 'Succès',
+                description: 'Contrat mis à jour avec succès',
+                variant: 'success',
+            });
+            router.push('/dashboard/contracts');
+            router.refresh();
+        },
+        onError: (error: Error) => {
+            toast({
+                title: 'Erreur',
+                description: error.message,
+                variant: 'error',
+            });
+        },
+    });
 
     const form = useForm<ContractFormData>({
         resolver: zodResolver(contractSchema),
@@ -45,52 +116,10 @@ const ContractFormClient = ({
     });
 
     const onSubmit = async (data: ContractFormData) => {
-        try {
-            const response = await fetch(
-                isEditing
-                    ? `/api/contracts/${contractId}`
-                    : '/api/contracts/create',
-                {
-                    method: isEditing ? 'PUT' : 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data),
-                }
-            );
-
-            const result = await response.json();
-
-            if (!response.ok) {
-                if (
-                    response.status === 409 &&
-                    result.code === 'CONTRACT_EXISTS'
-                ) {
-                    toast({
-                        title: 'Contrat existant',
-                        description: result.message,
-                        variant: 'error',
-                    });
-                    return;
-                }
-                throw new Error(result.error || 'Erreur lors de la création');
-            }
-
-            toast({
-                title: 'Succès',
-                description: isEditing ? 'Contrat mis à jour' : 'Contrat créé',
-                variant: 'success',
-            });
-
-            router.push('/dashboard/contracts');
-            router.refresh();
-        } catch (error) {
-            toast({
-                title: 'Erreur',
-                description:
-                    error instanceof Error
-                        ? error.message
-                        : 'Une erreur est survenue',
-                variant: 'error',
-            });
+        if (isEditing && contractId) {
+            updateContract({ id: contractId, data });
+        } else {
+            createContract(data);
         }
     };
 
@@ -99,6 +128,7 @@ const ContractFormClient = ({
             form={form}
             isViewMode={isViewMode}
             isEditing={isEditing}
+            isSubmitting={isEditing ? isUpdating : isCreating}
             onSubmit={onSubmit}
             availableClauses={initialData.clauses}
             employees={initialData.employees}

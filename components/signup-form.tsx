@@ -9,6 +9,7 @@ import { useForm } from 'react-hook-form';
 
 import { authClient } from '@/app/_lib/auth-client';
 
+import { useToast } from '@/app/_lib/hooks/use-toast';
 import { cn } from '@/app/_lib/utils';
 import {
     SignUpInput,
@@ -31,7 +32,6 @@ import {
     FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { useToast } from '@/hooks/use-toast';
 
 export const SignUpForm = ({
     className,

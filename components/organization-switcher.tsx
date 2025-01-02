@@ -1,7 +1,7 @@
 'use client';
 
+import { useToast } from '@/app/_lib/hooks/use-toast';
 import { cn } from '@/app/_lib/utils';
-import { useToast } from '@/hooks/use-toast';
 import { Organization } from '@prisma/client';
 import { Building2, ChevronDown, Plus } from 'lucide-react';
 import { useRouter } from 'next/navigation';

@@ -10,6 +10,7 @@ export const ContractFormUI = ({
     form,
     isViewMode,
     isEditing,
+    isSubmitting,
     onSubmit,
     availableClauses,
     employees,
@@ -42,7 +43,7 @@ export const ContractFormUI = ({
                         <FormActions
                             isViewMode={isViewMode}
                             isEditing={isEditing}
-                            isSubmitting={form.formState.isSubmitting}
+                            isSubmitting={isSubmitting}
                         />
                     </form>
                 </FormProvider>

@@ -1,5 +1,6 @@
 'use client';
 
+import { useToast } from '@/app/_lib/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
@@ -7,7 +8,6 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useToast } from '@/hooks/use-toast';
 import { MoreHorizontal } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 

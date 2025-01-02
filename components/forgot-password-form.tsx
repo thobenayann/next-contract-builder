@@ -1,9 +1,9 @@
 'use client';
 
 import { authClient } from '@/app/_lib/auth-client';
+import { useToast } from '@/app/_lib/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useToast } from '@/hooks/use-toast';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';

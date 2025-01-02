@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation';
 import { Controller, useForm } from 'react-hook-form';
 
 import { GENDERS, GENDER_LABELS } from '@/app/_lib/constants';
+import { useToast } from '@/app/_lib/hooks/use-toast';
 import { EmployeeFormData, employeeSchema } from '@/app/_lib/validations';
 import { EmployeeFormSkeleton } from '@/components/skeletons/EmployeeFormSkeleton';
 import { Button } from '@/components/ui/button';
@@ -21,7 +22,6 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { PageTransition } from '@/components/ui/transition';
-import { useToast } from '@/hooks/use-toast';
 
 const EmployeeForm = () => {
     const form = useForm<EmployeeFormData>({

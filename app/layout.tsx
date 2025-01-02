@@ -1,6 +1,6 @@
+import { TarnstackQueryProvider } from '@/components/providers/tarnstack-query-provider';
 import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/toaster';
-
 import type { Metadata } from 'next';
 
 import './globals.css';
@@ -21,7 +21,9 @@ const RootLayout = ({ children }: { children: React.ReactNode }) => {
                     disableTransitionOnChange
                 >
                     <main className='min-h-screen bg-background'>
-                        {children}
+                        <TarnstackQueryProvider>
+                            {children}
+                        </TarnstackQueryProvider>
                     </main>
                     <Toaster />
                 </ThemeProvider>
