@@ -57,7 +57,22 @@ const ContractFormClient = ({
                 }
             );
 
-            if (!response.ok) throw new Error('Erreur lors de la sauvegarde');
+            const result = await response.json();
+
+            if (!response.ok) {
+                if (
+                    response.status === 409 &&
+                    result.code === 'CONTRACT_EXISTS'
+                ) {
+                    toast({
+                        title: 'Contrat existant',
+                        description: result.message,
+                        variant: 'error',
+                    });
+                    return;
+                }
+                throw new Error(result.error || 'Erreur lors de la création');
+            }
 
             toast({
                 title: 'Succès',

@@ -4,6 +4,7 @@ import {
     ContractFormData,
     contractSchema,
 } from '@/app/_lib/validations/schemas/contract.schema';
+import { Prisma } from '@prisma/client';
 import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
@@ -45,6 +46,23 @@ export async function POST(request: Request) {
             );
         }
 
+        // Vérifier si l'employé a déjà un contrat
+        const existingContract = await prisma.contract.findUnique({
+            where: { employeeId: data.employeeId },
+            include: { employee: true },
+        });
+
+        if (existingContract) {
+            return NextResponse.json(
+                {
+                    error: 'Contrat existant',
+                    message: `Un contrat existe déjà pour ${existingContract.employee.firstName} ${existingContract.employee.lastName}`,
+                    code: 'CONTRACT_EXISTS',
+                },
+                { status: 409 }
+            );
+        }
+
         // Créer le contrat
         const contract = await prisma.contract.create({
             data: {
@@ -75,6 +93,20 @@ export async function POST(request: Request) {
         return NextResponse.json(contract);
     } catch (error) {
         console.error('Erreur:', error);
+
+        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+            if (error.code === 'P2002') {
+                return NextResponse.json(
+                    {
+                        error: 'Contrat existant',
+                        message: 'Un contrat existe déjà pour cet employé',
+                        code: 'CONTRACT_EXISTS',
+                    },
+                    { status: 409 }
+                );
+            }
+        }
+
         return NextResponse.json(
             { error: 'Erreur lors de la création' },
             { status: 500 }
