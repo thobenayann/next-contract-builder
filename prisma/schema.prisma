@@ -32,14 +32,23 @@ model Contract {
   startDate      DateTime
   endDate        DateTime?
   employeeId     String               @unique
-  employee       Employee             @relation(fields: [employeeId], references: [id])
+  employee       Employee             @relation(fields: [employeeId], references: [id], onDelete: Cascade)
   organizationId String
   organization   Organization         @relation(fields: [organizationId], references: [id])
-  clauses        ClausesOnContracts[]
+  clauses        ContractClause[]     @relation("ContractClauses")
   createdAt      DateTime             @default(now())
   updatedAt      DateTime             @updatedAt
   userId         String
   user           User                 @relation(fields: [userId], references: [id])
+}
+
+model ContractClause {
+  id         String   @id @default(cuid())
+  contractId String
+  clauseId   String
+  order      Int
+  contract   Contract @relation("ContractClauses", fields: [contractId], references: [id], onDelete: Cascade)
+  clause     Clause   @relation("ClauseContracts", fields: [clauseId], references: [id])
 }
 
 model Clause {
@@ -47,7 +56,7 @@ model Clause {
   title     String
   content   String
   category  String
-  contracts ClausesOnContracts[]
+  contracts ContractClause[]     @relation("ClauseContracts")
   order     Int
   createdAt DateTime             @default(now())
   updatedAt DateTime             @updatedAt
@@ -55,18 +64,6 @@ model Clause {
   user      User                 @relation(fields: [userId], references: [id])
 
   @@unique([title, userId])
-}
-
-model ClausesOnContracts {
-  contract   Contract @relation(fields: [contractId], references: [id])
-  contractId String
-  clause     Clause   @relation(fields: [clauseId], references: [id])
-  clauseId   String
-  order      Int
-
-  @@id([contractId, clauseId])
-  @@index([contractId])
-  @@index([clauseId])
 }
 
 model Account {

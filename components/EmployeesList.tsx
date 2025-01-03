@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -18,9 +18,10 @@ import {
     TableRow,
 } from '@/components/ui/table';
 
+import { useEmployees } from '@/app/_lib/hooks/useEmployees';
 import { EmployeeWithContract } from '@/app/_lib/types';
 import { DeleteConfirmDialog } from './DeleteConfirmDialog';
-import { EmployeesSkeleton } from './skeletons/EmployeesSkeleton';
+import { DeleteEmployeeWithContractDialog } from './DeleteEmployeeWithContractDialog';
 
 interface EmployeesListProps {
     initialEmployees: EmployeeWithContract[];
@@ -31,52 +32,38 @@ export const EmployeesList = ({
 }: EmployeesListProps) => {
     const router = useRouter();
     const { toast } = useToast();
-    const [employees, setEmployees] =
-        useState<EmployeeWithContract[]>(initialEmployees);
     const [deleteEmployee, setDeleteEmployee] =
         useState<EmployeeWithContract | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
+    const [showContractWarning, setShowContractWarning] = useState(false);
+    const {
+        deleteEmployee: deleteEmployeeMutation,
+        isDeleting,
+        employees = initialEmployees,
+    } = useEmployees();
 
-    useEffect(() => {
-        const timer = setTimeout(() => setIsLoading(false), 500);
-        return () => clearTimeout(timer);
-    }, []);
+    const handleDeleteClick = (employee: EmployeeWithContract) => {
+        if (employee.contract) {
+            setShowContractWarning(true);
+        }
+        setDeleteEmployee(employee);
+    };
 
-    if (isLoading) {
-        return <EmployeesSkeleton />;
-    }
-
-    const handleDelete = async () => {
-        if (!deleteEmployee) return;
-        setIsLoading(true);
-
-        try {
-            const response = await fetch(
-                `/api/employees/${deleteEmployee.id}`,
-                {
-                    method: 'DELETE',
-                }
-            );
-
-            if (!response.ok) throw new Error('Erreur lors de la suppression');
-
-            setEmployees(employees.filter((e) => e.id !== deleteEmployee.id));
-            toast({
-                title: 'Succès! 🎉',
-                description: 'Employé supprimé avec succès',
-                variant: 'success',
-            });
-            setDeleteEmployee(null);
-            router.refresh();
-        } catch (error) {
-            console.error('Erreur lors de la suppression:', error);
+    const handleDelete = async (employee: EmployeeWithContract) => {
+        if (!employee.isOwner) {
             toast({
                 title: 'Erreur',
-                description: "Impossible de supprimer l'employé",
+                description: "Vous n'êtes pas autorisé à supprimer cet employé",
                 variant: 'error',
             });
-        } finally {
-            setIsLoading(false);
+            return;
+        }
+
+        try {
+            await deleteEmployeeMutation(employee.id);
+            setDeleteEmployee(null);
+            setShowContractWarning(false);
+        } catch (error) {
+            console.error('Erreur lors de la suppression:', error);
         }
     };
 
@@ -162,7 +149,7 @@ export const EmployeesList = ({
                                         variant='ghost'
                                         size='icon'
                                         onClick={() =>
-                                            setDeleteEmployee(employee)
+                                            handleDeleteClick(employee)
                                         }
                                     >
                                         <Trash2 className='h-4 w-4' />
@@ -174,17 +161,38 @@ export const EmployeesList = ({
                 </Table>
             </div>
 
-            <DeleteConfirmDialog
-                isOpen={!!deleteEmployee}
-                onClose={() => setDeleteEmployee(null)}
-                onConfirm={handleDelete}
-                title={
-                    deleteEmployee
-                        ? `${deleteEmployee.lastName} ${deleteEmployee.firstName}`
-                        : ''
-                }
-                isLoading={isLoading}
-            />
+            {showContractWarning ? (
+                <DeleteEmployeeWithContractDialog
+                    isOpen={!!deleteEmployee}
+                    onClose={() => {
+                        setDeleteEmployee(null);
+                        setShowContractWarning(false);
+                    }}
+                    onConfirm={() =>
+                        deleteEmployee && handleDelete(deleteEmployee)
+                    }
+                    title={
+                        deleteEmployee
+                            ? `${deleteEmployee.lastName} ${deleteEmployee.firstName}`
+                            : ''
+                    }
+                    isLoading={isDeleting}
+                />
+            ) : (
+                <DeleteConfirmDialog
+                    isOpen={!!deleteEmployee}
+                    onClose={() => setDeleteEmployee(null)}
+                    onConfirm={() =>
+                        deleteEmployee && handleDelete(deleteEmployee)
+                    }
+                    title={
+                        deleteEmployee
+                            ? `${deleteEmployee.lastName} ${deleteEmployee.firstName}`
+                            : ''
+                    }
+                    isLoading={isDeleting}
+                />
+            )}
         </div>
     );
 };

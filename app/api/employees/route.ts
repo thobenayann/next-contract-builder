@@ -42,7 +42,11 @@ export async function POST(request: Request) {
 
         return NextResponse.json(newEmployee);
     } catch (error) {
-        // ... gestion des erreurs
+        console.error('Erreur lors de la création:', error);
+        return NextResponse.json(
+            { error: "Erreur lors de la création de l'employé" },
+            { status: 500 }
+        );
     }
 }
 
@@ -56,7 +60,6 @@ export async function GET() {
             return NextResponse.json(null, { status: 401 });
         }
 
-        // Récupérer l'organisation active
         const user = await prisma.user.findUnique({
             where: { id: sessionData.session.userId },
             select: { activeOrganizationId: true },
@@ -81,7 +84,12 @@ export async function GET() {
             },
         });
 
-        return NextResponse.json(employees);
+        const employeesWithOwnership = employees.map((employee) => ({
+            ...employee,
+            isOwner: employee.userId === sessionData.session.userId,
+        }));
+
+        return NextResponse.json(employeesWithOwnership);
     } catch (error) {
         console.error('Erreur lors de la récupération:', error);
         return NextResponse.json(

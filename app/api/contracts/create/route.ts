@@ -66,12 +66,12 @@ export async function POST(request: Request) {
         // Créer le contrat
         const contract = await prisma.contract.create({
             data: {
-                userId: session.userId,
-                organizationId: user.activeOrganization.id,
                 type: data.type,
                 startDate: new Date(data.startDate),
                 endDate: data.endDate ? new Date(data.endDate) : null,
                 employeeId: data.employeeId,
+                organizationId: user.activeOrganization.id,
+                userId: session.userId,
             },
         });
 
@@ -79,7 +79,7 @@ export async function POST(request: Request) {
         if (data.selectedClauses?.length > 0) {
             await Promise.all(
                 data.selectedClauses.map((clause, index) =>
-                    prisma.clausesOnContracts.create({
+                    prisma.contractClause.create({
                         data: {
                             contractId: contract.id,
                             clauseId: clause.id,

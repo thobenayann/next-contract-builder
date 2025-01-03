@@ -61,7 +61,7 @@ export async function PUT(
         });
 
         // Supprimer les anciennes associations
-        await prisma.clausesOnContracts.deleteMany({
+        await prisma.contractClause.deleteMany({
             where: { contractId: params.id },
         });
 
@@ -69,7 +69,7 @@ export async function PUT(
         if (data.selectedClauses.length > 0) {
             await Promise.all(
                 data.selectedClauses.map((clause, index) =>
-                    prisma.clausesOnContracts.create({
+                    prisma.contractClause.create({
                         data: {
                             contractId: updatedContract.id,
                             clauseId: clause.id,
@@ -96,12 +96,7 @@ export async function DELETE(
 ) {
     const params = await props.params;
     try {
-        // D'abord supprimer les associations
-        await prisma.clausesOnContracts.deleteMany({
-            where: { contractId: params.id },
-        });
-
-        // Puis supprimer le contrat
+        // Grâce au onDelete: Cascade, pas de supprimer manuellement les associations
         const deletedContract = await prisma.contract.delete({
             where: { id: params.id },
         });

@@ -1,8 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, subYears } from 'date-fns';
 import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -10,8 +9,8 @@ import { Controller, useForm } from 'react-hook-form';
 
 import { GENDERS, GENDER_LABELS } from '@/app/_lib/constants';
 import { useToast } from '@/app/_lib/hooks/use-toast';
+import { ValidationError } from '@/app/_lib/types';
 import { EmployeeFormData, employeeSchema } from '@/app/_lib/validations';
-import { EmployeeFormSkeleton } from '@/components/skeletons/EmployeeFormSkeleton';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -24,6 +23,10 @@ import {
 import { PageTransition } from '@/components/ui/transition';
 
 const EmployeeForm = () => {
+    const { toast } = useToast();
+    const router = useRouter();
+    const queryClient = useQueryClient();
+
     const form = useForm<EmployeeFormData>({
         resolver: zodResolver(employeeSchema),
         defaultValues: {
@@ -35,90 +38,59 @@ const EmployeeForm = () => {
             ssn: '',
         },
     });
-    const router = useRouter();
-    const { toast } = useToast();
-    const [isLoading, setIsLoading] = useState(false);
-    const [isInitialLoading, setIsInitialLoading] = useState(true);
 
-    // Calculer la date maximale (18 ans avant aujourd'hui)
-    const maxDate = format(subYears(new Date(), 18), 'yyyy-MM-dd');
-
-    useEffect(() => {
-        const loadEmployee = async () => {
-            setIsInitialLoading(false);
-        };
-
-        loadEmployee();
-    }, []);
-
-    const onSubmit = async (data: EmployeeFormData) => {
-        try {
-            setIsLoading(true);
+    const { mutate: createEmployee, isPending: isCreating } = useMutation({
+        mutationFn: async (data: EmployeeFormData) => {
             const response = await fetch('/api/employees/create', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data),
             });
 
             const result = await response.json();
 
             if (!response.ok) {
-                // Gestion des erreurs de validation et autres erreurs
                 if (response.status === 400) {
                     if (result.details) {
-                        // Erreurs de validation Zod
-                        result.details.forEach((error: any) => {
-                            form.setError(error.path[0], {
-                                message: error.message,
-                            });
-                        });
-                    } else {
-                        // Autres erreurs 400 (comme le numéro de sécu en doublon)
-                        toast({
-                            variant: 'error',
-                            title: 'Erreur',
-                            description: result.error,
-                        });
+                        throw { validationErrors: result.details };
                     }
-                    return;
+                    throw new Error(result.error);
                 }
                 throw new Error(result.error || 'Une erreur est survenue');
             }
 
+            return result;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['employees'] });
             toast({
                 variant: 'success',
                 title: 'Succès! 🎉',
                 description: 'Employé créé avec succès',
             });
-
             router.push('/dashboard/employees');
             router.refresh();
-        } catch (error) {
-            console.error('Erreur:', error);
+        },
+        onError: (error: any) => {
+            if (error.validationErrors) {
+                error.validationErrors.forEach((err: ValidationError) => {
+                    form.setError(err.path[0] as any, {
+                        message: err.message,
+                    });
+                });
+                return;
+            }
             toast({
                 variant: 'error',
                 title: 'Erreur',
-                description:
-                    error instanceof Error
-                        ? error.message
-                        : 'Une erreur est survenue',
+                description: error.message || 'Une erreur est survenue',
             });
-        } finally {
-            setIsLoading(false);
-        }
-    };
+        },
+    });
 
-    if (isInitialLoading) {
-        return (
-            <PageTransition>
-                <div className='container mx-auto p-4 max-w-4xl'>
-                    <EmployeeFormSkeleton />
-                </div>
-            </PageTransition>
-        );
-    }
+    const onSubmit = (data: EmployeeFormData) => {
+        createEmployee(data);
+    };
 
     return (
         <PageTransition>
@@ -149,7 +121,7 @@ const EmployeeForm = () => {
                             <Input
                                 id='firstName'
                                 {...form.register('firstName')}
-                                disabled={isLoading}
+                                disabled={isCreating}
                             />
                             {form.formState.errors.firstName && (
                                 <p className='text-sm text-red-500'>
@@ -168,7 +140,7 @@ const EmployeeForm = () => {
                             <Input
                                 id='lastName'
                                 {...form.register('lastName')}
-                                disabled={isLoading}
+                                disabled={isCreating}
                             />
                             {form.formState.errors.lastName && (
                                 <p className='text-sm text-red-500'>
@@ -191,7 +163,7 @@ const EmployeeForm = () => {
                                     <Select
                                         onValueChange={field.onChange}
                                         value={field.value}
-                                        disabled={isLoading}
+                                        disabled={isCreating}
                                     >
                                         <SelectTrigger>
                                             <SelectValue placeholder='Sélectionner' />
@@ -232,9 +204,12 @@ const EmployeeForm = () => {
                             <Input
                                 id='birthdate'
                                 type='date'
-                                max={maxDate}
+                                max={format(
+                                    subYears(new Date(), 18),
+                                    'yyyy-MM-dd'
+                                )}
                                 {...form.register('birthdate')}
-                                disabled={isLoading}
+                                disabled={isCreating}
                             />
                             {form.formState.errors.birthdate && (
                                 <p className='text-sm text-red-500'>
@@ -253,7 +228,7 @@ const EmployeeForm = () => {
                             <Input
                                 id='nationality'
                                 {...form.register('nationality')}
-                                disabled={isLoading}
+                                disabled={isCreating}
                             />
                             {form.formState.errors.nationality && (
                                 <p className='text-sm text-red-500'>
@@ -272,7 +247,7 @@ const EmployeeForm = () => {
                             <Input
                                 id='ssn'
                                 {...form.register('ssn')}
-                                disabled={isLoading}
+                                disabled={isCreating}
                             />
                             {form.formState.errors.ssn && (
                                 <p className='text-sm text-red-500'>
@@ -287,12 +262,12 @@ const EmployeeForm = () => {
                             variant='outline'
                             onClick={() => router.push('/dashboard/employees')}
                             type='button'
-                            disabled={isLoading}
+                            disabled={isCreating}
                         >
                             Annuler
                         </Button>
-                        <Button type='submit' disabled={isLoading}>
-                            {isLoading && (
+                        <Button type='submit' disabled={isCreating}>
+                            {isCreating && (
                                 <Loader2 className='mr-2 h-4 w-4 animate-spin' />
                             )}
                             Créer
