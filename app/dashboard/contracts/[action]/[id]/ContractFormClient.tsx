@@ -1,7 +1,10 @@
 'use client';
 
 import { useToast } from '@/app/_lib/hooks/use-toast';
-import { ContractFormClientProps, ContractWithClauses } from '@/app/_lib/types';
+import {
+    ContractFormClientProps,
+    ContractWithRelations,
+} from '@/app/_lib/types';
 import {
     ContractFormData,
     contractSchema,
@@ -25,7 +28,7 @@ export const ContractFormClient = ({
     const isEditing = action === 'edit';
 
     const transformContractData = (
-        contract: ContractWithClauses
+        contract: ContractWithRelations
     ): ContractFormData => ({
         type: contract.type,
         startDate: new Date(contract.startDate).toISOString().split('T')[0],

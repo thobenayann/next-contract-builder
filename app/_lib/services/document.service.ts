@@ -8,6 +8,7 @@ import {
 } from 'docx';
 
 import type { ContractWithRelations } from '@/app/_lib/types';
+import type { Clause } from '@prisma/client';
 
 interface TipTapContent {
     type: string;
@@ -71,17 +72,19 @@ export class DocumentService {
                             spacing: { before: 200, after: 400 },
                         }),
 
-                        ...contract.clauses.flatMap(({ clause }) => [
-                            new Paragraph({
-                                text: clause.title,
-                                heading: HeadingLevel.HEADING_2,
-                                spacing: { before: 400, after: 200 },
-                            }),
-                            new Paragraph({
-                                text: this.parseContent(clause.content),
-                                spacing: { after: 200 },
-                            }),
-                        ]),
+                        ...contract.clauses.flatMap(
+                            ({ clause }: { clause: Clause }) => [
+                                new Paragraph({
+                                    text: clause.title,
+                                    heading: HeadingLevel.HEADING_2,
+                                    spacing: { before: 400, after: 200 },
+                                }),
+                                new Paragraph({
+                                    text: this.parseContent(clause.content),
+                                    spacing: { after: 200 },
+                                }),
+                            ]
+                        ),
                     ],
                 },
             ],
