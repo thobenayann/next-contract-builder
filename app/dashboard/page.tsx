@@ -1,90 +1,46 @@
-import { redirect } from 'next/navigation';
-import { Suspense } from 'react';
+'use client';
 
-import { prisma } from '@/app/_lib/db';
-import { getSession } from '@/app/_lib/session';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { LoadingSpinner } from '@/components/ui/loading';
+import { useDashboardStats } from '@/app/_lib/hooks/use-dashboard-stats';
+import { StatsCard } from '@/components/ui/stats-card';
 import { PageTransition } from '@/components/ui/transition';
+import { FileText, Users } from 'lucide-react';
 
-const DashboardPage = async () => {
-    const session = await getSession();
-    const currentUserId = session?.userId;
-
-    // Récupérer l'utilisateur avec son organisation active et les membres
-    const user = await prisma.user.findUnique({
-        where: { id: currentUserId },
-        select: {
-            activeOrganization: {
-                include: {
-                    members: {
-                        select: { userId: true },
-                    },
-                },
-            },
-        },
-    });
-
-    if (!user?.activeOrganization) {
-        redirect('/dashboard/organizations');
-    }
-
-    // Récupérer les IDs des membres de l'organisation
-    const organizationMemberIds = user.activeOrganization.members.map(
-        (m) => m.userId
-    );
-
-    // Récupérer les statistiques pour l'organisation active
-    const [clausesCount, contractsCount] = await Promise.all([
-        prisma.clause.count({
-            where: {
-                userId: { in: organizationMemberIds },
-            },
-        }),
-        prisma.contract.count({
-            where: {
-                organizationId: user.activeOrganization.id,
-            },
-        }),
-    ]);
+const DashboardPage = () => {
+    const {
+        data: stats = { totalEmployees: 0, totalContracts: 0, totalClauses: 0 },
+        isLoading,
+        isFetching,
+    } = useDashboardStats();
 
     return (
         <PageTransition>
-            <Suspense fallback={<LoadingSpinner />}>
-                <div className='space-y-6'>
-                    <h1 className='text-3xl font-bold'>Tableau de bord</h1>
-                    <div className='grid gap-4 md:grid-cols-2'>
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Clauses</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <p className='text-2xl font-bold'>
-                                    {clausesCount}
-                                </p>
-                                <p className='text-sm text-muted-foreground'>
-                                    Clauses créées dans{' '}
-                                    {user.activeOrganization.name}
-                                </p>
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Contrats</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <p className='text-2xl font-bold'>
-                                    {contractsCount}
-                                </p>
-                                <p className='text-sm text-muted-foreground'>
-                                    Contrats générés dans{' '}
-                                    {user.activeOrganization.name}
-                                </p>
-                            </CardContent>
-                        </Card>
-                    </div>
+            <div className='flex-1 space-y-4 p-4 md:p-8 pt-6'>
+                <div className='flex items-center justify-between space-y-2'>
+                    <h2 className='text-3xl font-bold tracking-tight'>
+                        Tableau de bord
+                    </h2>
                 </div>
-            </Suspense>
+                <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
+                    <StatsCard
+                        title='Employés'
+                        value={stats.totalEmployees}
+                        icon={Users}
+                        isLoading={isLoading || isFetching}
+                    />
+                    <StatsCard
+                        title='Contrats'
+                        value={stats.totalContracts}
+                        icon={FileText}
+                        isLoading={isLoading || isFetching}
+                    />
+                    <StatsCard
+                        title='Clauses'
+                        value={stats.totalClauses}
+                        icon={FileText}
+                        isLoading={isLoading || isFetching}
+                    />
+                </div>
+            </div>
         </PageTransition>
     );
 };

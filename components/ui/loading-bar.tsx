@@ -1,35 +1,10 @@
 'use client';
 
+import { useLoadingBar } from '@/app/_lib/hooks/use-loading-bar';
 import { motion } from 'framer-motion';
-import { usePathname, useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
 
 export const LoadingBar = () => {
-    const [isLoading, setIsLoading] = useState(false);
-    const pathname = usePathname();
-    const searchParams = useSearchParams();
-
-    useEffect(() => {
-        const handleStart = () => {
-            setIsLoading(true);
-        };
-
-        const handleStop = () => {
-            const timeout = setTimeout(() => {
-                setIsLoading(false);
-            }, 300); // Petit délai pour une meilleure UX
-            return () => clearTimeout(timeout);
-        };
-
-        // Déclencher le chargement quand le pathname ou les searchParams changent
-        handleStart();
-        handleStop();
-
-        // Cleanup
-        return () => {
-            setIsLoading(false);
-        };
-    }, [pathname, searchParams]);
+    const { isLoading } = useLoadingBar();
 
     if (!isLoading) return null;
 
