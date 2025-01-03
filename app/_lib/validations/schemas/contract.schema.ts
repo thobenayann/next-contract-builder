@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { DOCUMENT_TYPES } from '../../constants';
 
 const clauseSchema = z.object({
     id: z.string(),
@@ -46,7 +47,7 @@ export const contractSchema = z.object({
 export type ContractFormData = z.infer<typeof contractSchema>;
 
 export const defaultContractValues: ContractFormData = {
-    type: 'CONTRACT',
+    type: DOCUMENT_TYPES.CONTRACT_DETERMINED_DURATION,
     startDate: new Date().toISOString().split('T')[0],
     endDate: null,
     employeeId: '',

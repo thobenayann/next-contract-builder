@@ -18,7 +18,17 @@ interface FormFieldsProps {
 }
 
 export const FormFields = ({ isViewMode, employees }: FormFieldsProps) => {
-    const { control, register } = useFormContext();
+    const { control, register, watch, setValue } = useFormContext();
+
+    // Observer le type de contrat
+    const contractType = watch('type');
+
+    // Si c'est un CDI, on vide la date de fin
+    const isOpenDuration =
+        contractType === DOCUMENT_TYPES.CONTRACT_OPEN_DURATION;
+    if (isOpenDuration) {
+        setValue('endDate', null);
+    }
 
     return (
         <div className='space-y-6'>
@@ -42,7 +52,10 @@ export const FormFields = ({ isViewMode, employees }: FormFieldsProps) => {
                                 <SelectContent>
                                     {Object.entries(DOCUMENT_TYPES).map(
                                         ([key, value]) => (
-                                            <SelectItem key={key} value={value}>
+                                            <SelectItem
+                                                key={value}
+                                                value={value}
+                                            >
                                                 {
                                                     DOCUMENT_TYPES_LABELS[
                                                         value as keyof typeof DOCUMENT_TYPES_LABELS
@@ -97,11 +110,18 @@ export const FormFields = ({ isViewMode, employees }: FormFieldsProps) => {
                 </div>
 
                 <div className='space-y-2'>
-                    <label className='text-sm font-medium'>Date de fin</label>
+                    <label className='text-sm font-medium'>
+                        Date de fin
+                        {isOpenDuration && (
+                            <span className='ml-2 text-xs text-muted-foreground'>
+                                (Non applicable pour un CDI)
+                            </span>
+                        )}
+                    </label>
                     <Input
                         type='date'
                         {...register('endDate')}
-                        disabled={isViewMode}
+                        disabled={isViewMode || isOpenDuration}
                     />
                 </div>
 

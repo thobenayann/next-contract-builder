@@ -1,5 +1,7 @@
 'use client';
 
+import type { DocumentType } from '@/app/_lib/constants';
+import { DOCUMENT_TYPES_LABELS } from '@/app/_lib/constants';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Download, Eye, Pencil, Plus, Trash2 } from 'lucide-react';
@@ -22,7 +24,7 @@ import { DeleteConfirmDialog } from './DeleteConfirmDialog';
 
 interface Contract {
     id: string;
-    type: string;
+    type: DocumentType;
     startDate: string;
     endDate: string | null;
     employee: {
@@ -97,7 +99,9 @@ export const ContractsList = ({
                                         {contract.employee.lastName}{' '}
                                         {contract.employee.firstName}
                                     </TableCell>
-                                    <TableCell>{contract.type}</TableCell>
+                                    <TableCell>
+                                        {DOCUMENT_TYPES_LABELS[contract.type]}
+                                    </TableCell>
                                     <TableCell>
                                         {format(
                                             new Date(contract.startDate),
@@ -112,7 +116,7 @@ export const ContractsList = ({
                                                   'dd MMMM yyyy',
                                                   { locale: fr }
                                               )
-                                            : 'Indéterminé'}
+                                            : 'Indéterminée'}
                                     </TableCell>
                                     <TableCell>{contract.authorName}</TableCell>
                                     <TableCell>
