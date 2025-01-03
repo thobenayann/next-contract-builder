@@ -2,14 +2,14 @@ import { Clause, Contract, Employee } from '@prisma/client';
 import { UseFormReturn } from 'react-hook-form';
 import { ContractFormData } from './validations/schemas/contract.schema';
 
-interface ContractWithClauses extends Contract {
+export interface ContractWithClauses extends Contract {
     clauses: {
         clause: Clause;
         order: number;
     }[];
 }
 
-interface ContractFormInitialData {
+export interface ContractFormInitialData {
     contract?: ContractWithClauses | null;
     clauses: Clause[];
     employees: Employee[];

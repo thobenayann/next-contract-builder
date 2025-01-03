@@ -38,7 +38,7 @@ export function useEmployees() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['employees'] });
             toast({
-                title: 'Succès',
+                title: 'Succès! 🎉',
                 description: 'Employé créé avec succès',
                 variant: 'success',
             });
@@ -71,7 +71,7 @@ export function useEmployees() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['employees'] });
             toast({
-                title: 'Succès',
+                title: '! 🎉',
                 description: 'Employé modifié avec succès',
                 variant: 'success',
             });

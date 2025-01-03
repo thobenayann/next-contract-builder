@@ -92,71 +92,86 @@ export const EmployeesList = ({
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {employees.map((employee) => (
-                            <TableRow key={employee.id}>
-                                <TableCell>
-                                    {employee.lastName} {employee.firstName}
-                                </TableCell>
-                                <TableCell>
-                                    {format(new Date(employee.birthdate), 'P', {
-                                        locale: fr,
-                                    })}
-                                </TableCell>
-                                <TableCell>{employee.ssn}</TableCell>
-                                <TableCell>
-                                    {employee.contract ? (
-                                        <Button
-                                            variant='outline'
-                                            size='sm'
-                                            onClick={() => {
-                                                if (employee.contract) {
+                        {employees.length > 0 ? (
+                            employees.map((employee) => (
+                                <TableRow key={employee.id}>
+                                    <TableCell>
+                                        {employee.lastName} {employee.firstName}
+                                    </TableCell>
+                                    <TableCell>
+                                        {format(
+                                            new Date(employee.birthdate),
+                                            'P',
+                                            {
+                                                locale: fr,
+                                            }
+                                        )}
+                                    </TableCell>
+                                    <TableCell>{employee.ssn}</TableCell>
+                                    <TableCell>
+                                        {employee.contract ? (
+                                            <Button
+                                                variant='outline'
+                                                size='sm'
+                                                onClick={() => {
+                                                    if (employee.contract) {
+                                                        router.push(
+                                                            `/dashboard/contracts/view/${employee.contract.id}`
+                                                        );
+                                                    }
+                                                }}
+                                            >
+                                                <FileText className='h-4 w-4 mr-2' />
+                                                Voir le contrat
+                                            </Button>
+                                        ) : (
+                                            <Button
+                                                variant='outline'
+                                                size='sm'
+                                                onClick={() =>
                                                     router.push(
-                                                        `/dashboard/contracts/view/${employee.contract.id}`
-                                                    );
+                                                        `/dashboard/contracts/create/${employee.id}`
+                                                    )
                                                 }
-                                            }}
-                                        >
-                                            <FileText className='h-4 w-4 mr-2' />
-                                            Voir le contrat
-                                        </Button>
-                                    ) : (
+                                            >
+                                                Créer un contrat
+                                            </Button>
+                                        )}
+                                    </TableCell>
+                                    <TableCell className='text-right space-x-2'>
                                         <Button
-                                            variant='outline'
-                                            size='sm'
+                                            variant='ghost'
+                                            size='icon'
                                             onClick={() =>
                                                 router.push(
-                                                    `/dashboard/contracts/create/${employee.id}`
+                                                    `/dashboard/employees/edit?id=${employee.id}`
                                                 )
                                             }
                                         >
-                                            Créer un contrat
+                                            <Pencil className='h-4 w-4' />
                                         </Button>
-                                    )}
-                                </TableCell>
-                                <TableCell className='text-right space-x-2'>
-                                    <Button
-                                        variant='ghost'
-                                        size='icon'
-                                        onClick={() =>
-                                            router.push(
-                                                `/dashboard/employees/edit?id=${employee.id}`
-                                            )
-                                        }
-                                    >
-                                        <Pencil className='h-4 w-4' />
-                                    </Button>
-                                    <Button
-                                        variant='ghost'
-                                        size='icon'
-                                        onClick={() =>
-                                            handleDeleteClick(employee)
-                                        }
-                                    >
-                                        <Trash2 className='h-4 w-4' />
-                                    </Button>
+                                        <Button
+                                            variant='ghost'
+                                            size='icon'
+                                            onClick={() =>
+                                                handleDeleteClick(employee)
+                                            }
+                                        >
+                                            <Trash2 className='h-4 w-4' />
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            ))
+                        ) : (
+                            <TableRow>
+                                <TableCell
+                                    colSpan={5}
+                                    className='h-24 text-center'
+                                >
+                                    Aucun employé trouvé.
                                 </TableCell>
                             </TableRow>
-                        ))}
+                        )}
                     </TableBody>
                 </Table>
             </div>

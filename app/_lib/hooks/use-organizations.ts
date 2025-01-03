@@ -49,7 +49,7 @@ export function useOrganizations() {
             queryClient.invalidateQueries({ queryKey: ['organizations'] });
             queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
             toast({
-                title: 'Succès',
+                title: 'Succès! 🎉',
                 description: 'Organisation créée avec succès',
                 variant: 'success',
             });

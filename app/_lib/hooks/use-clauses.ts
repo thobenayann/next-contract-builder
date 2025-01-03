@@ -114,7 +114,7 @@ export function useClauses() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['clauses'] });
             toast({
-                title: 'Succès',
+                title: 'Succès 🗑️',
                 description: 'Clause supprimée avec succès',
                 variant: 'success',
             });

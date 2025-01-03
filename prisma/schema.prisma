@@ -32,6 +32,15 @@ model Contract {
   type           String
   startDate      DateTime
   endDate        DateTime?
+  jobTitle       String
+  classification String
+  hierarchicalReport String
+  monthlySalary  Float
+  annualSalary   Float?
+  variableBonus  Float?
+  companyVehicle Boolean              @default(false)
+  trialPeriod    Int
+  trialPeriodRenewal Int?
   employeeId     String               @unique
   employee       Employee             @relation(fields: [employeeId], references: [id], onDelete: Cascade)
   organizationId String

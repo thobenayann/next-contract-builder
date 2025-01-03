@@ -1,8 +1,12 @@
 'use client';
 
 import { useToast } from '@/app/_lib/hooks/use-toast';
-import { ContractFormClientProps } from '@/app/_lib/types';
-import { ContractFormData, contractSchema } from '@/app/_lib/validations';
+import { ContractFormClientProps, ContractWithClauses } from '@/app/_lib/types';
+import {
+    ContractFormData,
+    contractSchema,
+    defaultContractValues,
+} from '@/app/_lib/validations/schemas/contract.schema';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
@@ -20,6 +24,39 @@ export const ContractFormClient = ({
     const isViewMode = action === 'view';
     const isEditing = action === 'edit';
 
+    const transformContractData = (
+        contract: ContractWithClauses
+    ): ContractFormData => ({
+        type: contract.type,
+        startDate: new Date(contract.startDate).toISOString().split('T')[0],
+        endDate: contract.endDate
+            ? new Date(contract.endDate).toISOString().split('T')[0]
+            : null,
+        employeeId: employeeId || contract.employeeId,
+        jobTitle: contract.jobTitle,
+        classification: contract.classification,
+        hierarchicalReport: contract.hierarchicalReport,
+        monthlySalary: contract.monthlySalary,
+        annualSalary: contract.annualSalary,
+        variableBonus: contract.variableBonus,
+        companyVehicle: contract.companyVehicle,
+        trialPeriod: contract.trialPeriod,
+        trialPeriodRenewal: contract.trialPeriodRenewal,
+        selectedClauses: contract.clauses.map((c) => ({
+            ...c.clause,
+            order: c.order,
+            createdAt: new Date(c.clause.createdAt).toISOString(),
+            updatedAt: new Date(c.clause.updatedAt).toISOString(),
+        })),
+    });
+
+    const form = useForm<ContractFormData>({
+        resolver: zodResolver(contractSchema),
+        defaultValues: initialData.contract
+            ? transformContractData(initialData.contract)
+            : defaultContractValues,
+    });
+
     const { mutate: createContract, isPending: isCreating } = useMutation({
         mutationFn: async (data: ContractFormData) => {
             const response = await fetch('/api/contracts/create', {
@@ -30,14 +67,18 @@ export const ContractFormClient = ({
 
             const result = await response.json();
             if (!response.ok) {
-                throw new Error(result.message || result.error);
+                throw new Error(
+                    result.error ||
+                        result.message ||
+                        'Erreur lors de la création'
+                );
             }
             return result;
         },
         onSuccess: () => {
             toast({
-                title: 'Succès',
-                description: 'Contrat créé avec succès 🎉',
+                title: 'Succès! 🎉',
+                description: 'Contrat créé avec succès',
                 variant: 'success',
             });
             router.push('/dashboard/contracts');
@@ -68,13 +109,17 @@ export const ContractFormClient = ({
 
             const result = await response.json();
             if (!response.ok) {
-                throw new Error(result.message || result.error);
+                throw new Error(
+                    result.error ||
+                        result.message ||
+                        'Erreur lors de la mise à jour'
+                );
             }
             return result;
         },
         onSuccess: () => {
             toast({
-                title: 'Succès',
+                title: 'Succès! 🎉',
                 description: 'Contrat mis à jour avec succès',
                 variant: 'success',
             });
@@ -90,32 +135,7 @@ export const ContractFormClient = ({
         },
     });
 
-    const form = useForm<ContractFormData>({
-        resolver: zodResolver(contractSchema),
-        defaultValues: {
-            type: initialData.contract?.type || 'CONTRACT',
-            startDate: initialData.contract?.startDate
-                ? new Date(initialData.contract.startDate)
-                      .toISOString()
-                      .split('T')[0]
-                : '',
-            endDate: initialData.contract?.endDate
-                ? new Date(initialData.contract.endDate)
-                      .toISOString()
-                      .split('T')[0]
-                : null,
-            employeeId: employeeId || initialData.contract?.employeeId || '',
-            selectedClauses:
-                initialData.contract?.clauses.map((c) => ({
-                    ...c.clause,
-                    order: c.order,
-                    createdAt: new Date(c.clause.createdAt).toISOString(),
-                    updatedAt: new Date(c.clause.updatedAt).toISOString(),
-                })) || [],
-        },
-    });
-
-    const onSubmit = async (data: ContractFormData) => {
+    const onSubmit = (data: ContractFormData) => {
         if (isEditing && contractId) {
             updateContract({ id: contractId, data });
         } else {

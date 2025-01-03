@@ -73,7 +73,7 @@ export function useContracts() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['contracts'] });
             toast({
-                title: 'Succès',
+                title: 'Succès! 🎉',
                 description: 'Contrat mis à jour avec succès',
                 variant: 'success',
             });
@@ -111,7 +111,7 @@ export function useContracts() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['contracts'] });
             toast({
-                title: 'Succès',
+                title: 'Succès 🗑️',
                 description: 'Contrat supprimé avec succès',
                 variant: 'success',
             });
