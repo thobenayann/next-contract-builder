@@ -7,7 +7,6 @@ import { NextResponse } from 'next/server';
 export async function POST(request: Request) {
     try {
         const data: SignUpInput = await request.json();
-        console.log('Données reçues:', data);
 
         // 1. Vérifier si l'organisation existe déjà
         const existingOrg = await prisma.organization.findUnique({
@@ -62,7 +61,6 @@ export async function POST(request: Request) {
                     password: data.password,
                     name: data.name,
                 });
-                console.log('Résultat signup:', signUpResult);
 
                 if (!signUpResult || signUpResult.error) {
                     throw new Error(

@@ -24,7 +24,7 @@ export interface ContractFormClientProps {
 
 export interface EmployeeWithContract extends Employee {
     contract: Contract | null;
-    isOwner: boolean;
+    isOwner?: boolean;
 }
 
 export interface ValidationError {
