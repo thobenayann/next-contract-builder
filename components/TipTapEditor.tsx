@@ -22,13 +22,17 @@ import {
     FaStrikethrough,
     FaUnderline,
 } from 'react-icons/fa';
+import { VariableSelector } from './VariableSelector';
 
 interface TipTapEditorProps {
     setContent: (content: string) => void;
     initialContent?: string;
 }
 
-const TipTapEditor = ({ setContent, initialContent }: TipTapEditorProps) => {
+const TipTapEditor = ({
+    setContent,
+    initialContent = '',
+}: TipTapEditorProps) => {
     const editor = useEditor({
         extensions: [
             StarterKit.configure({
@@ -82,6 +86,10 @@ const TipTapEditor = ({ setContent, initialContent }: TipTapEditorProps) => {
             }
         }
     }, [editor, initialContent]);
+
+    const insertVariable = (variable: string) => {
+        editor?.chain().focus().insertContent(variable).run();
+    };
 
     if (!editor) {
         return null;
@@ -203,6 +211,9 @@ const TipTapEditor = ({ setContent, initialContent }: TipTapEditorProps) => {
                     icon={<FaHighlighter />}
                     label='Surligner'
                 />
+                <div className='ml-auto'>
+                    <VariableSelector onSelect={insertVariable} />
+                </div>
             </div>
             <EditorContent editor={editor} className='p-4 min-h-[200px]' />
         </div>

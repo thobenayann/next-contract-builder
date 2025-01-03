@@ -9,6 +9,9 @@ import {
 
 import type { ContractWithRelations } from '@/app/_lib/types';
 import type { Clause } from '@prisma/client';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import { CONTRACT_VARIABLES } from '../constants/variables';
 
 interface TipTapContent {
     type: string;
@@ -40,6 +43,33 @@ export class DocumentService {
         } catch {
             return jsonContent;
         }
+    }
+
+    private static replaceVariables(
+        content: string,
+        contract: ContractWithRelations
+    ): string {
+        const replacements = {
+            [CONTRACT_VARIABLES.EMPLOYEE_FIRST_NAME]:
+                contract.employee.firstName,
+            [CONTRACT_VARIABLES.EMPLOYEE_LAST_NAME]: contract.employee.lastName,
+            [CONTRACT_VARIABLES.EMPLOYEE_FULL_NAME]: `${contract.employee.firstName} ${contract.employee.lastName}`,
+            [CONTRACT_VARIABLES.MONTHLY_SALARY]:
+                contract.monthlySalary.toString(),
+            [CONTRACT_VARIABLES.ANNUAL_SALARY]:
+                contract.annualSalary?.toString() || '',
+            [CONTRACT_VARIABLES.JOB_TITLE]: contract.jobTitle,
+            [CONTRACT_VARIABLES.START_DATE]: format(
+                new Date(contract.startDate),
+                'dd MMMM yyyy',
+                { locale: fr }
+            ),
+        };
+
+        return Object.entries(replacements).reduce(
+            (text, [variable, value]) => text.replaceAll(variable, value),
+            content
+        );
     }
 
     static async generateContract(
@@ -80,7 +110,10 @@ export class DocumentService {
                                     spacing: { before: 400, after: 200 },
                                 }),
                                 new Paragraph({
-                                    text: this.parseContent(clause.content),
+                                    text: this.replaceVariables(
+                                        this.parseContent(clause.content),
+                                        contract
+                                    ),
                                     spacing: { after: 200 },
                                 }),
                             ]
