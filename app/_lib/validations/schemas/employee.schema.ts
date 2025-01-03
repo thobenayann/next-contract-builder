@@ -1,6 +1,5 @@
-import { z } from 'zod';
-
 import { GENDERS } from '@/app/_lib/constants';
+import { z } from 'zod';
 
 export const employeeSchema = z.object({
     firstName: z
@@ -27,6 +26,10 @@ export const employeeSchema = z.object({
             },
             { message: "L'âge doit être compris entre 16 et 100 ans" }
         ),
+    birthPlace: z
+        .string()
+        .min(2, 'Le lieu de naissance doit contenir au moins 2 caractères')
+        .max(100, 'Le lieu de naissance ne peut pas dépasser 100 caractères'),
     nationality: z
         .string()
         .min(2, 'La nationalité doit contenir au moins 2 caractères')

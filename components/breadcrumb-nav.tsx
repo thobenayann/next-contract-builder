@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 
+import { useBreadcrumb } from '@/app/_lib/hooks/use-breadcrumb';
 import {
     Breadcrumb,
     BreadcrumbItem,
@@ -10,7 +11,6 @@ import {
     BreadcrumbPage,
     BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
-import { useBreadcrumb } from '@/hooks/use-breadcrumb';
 
 export const BreadcrumbNav = () => {
     const breadcrumbs = useBreadcrumb();

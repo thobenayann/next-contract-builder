@@ -11,6 +11,7 @@ CREATE TABLE "Employee" (
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "userId" TEXT NOT NULL,
+    "birthPlace" TEXT NOT NULL,
 
     CONSTRAINT "Employee_pkey" PRIMARY KEY ("id")
 );
@@ -21,6 +22,15 @@ CREATE TABLE "Contract" (
     "type" TEXT NOT NULL,
     "startDate" TIMESTAMP(3) NOT NULL,
     "endDate" TIMESTAMP(3),
+    "jobTitle" TEXT NOT NULL,
+    "classification" TEXT NOT NULL,
+    "hierarchicalReport" TEXT NOT NULL,
+    "monthlySalary" DOUBLE PRECISION NOT NULL,
+    "annualSalary" DOUBLE PRECISION,
+    "variableBonus" DOUBLE PRECISION,
+    "companyVehicle" BOOLEAN NOT NULL DEFAULT false,
+    "trialPeriod" INTEGER NOT NULL,
+    "trialPeriodRenewal" INTEGER,
     "employeeId" TEXT NOT NULL,
     "organizationId" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -28,6 +38,16 @@ CREATE TABLE "Contract" (
     "userId" TEXT NOT NULL,
 
     CONSTRAINT "Contract_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "ContractClause" (
+    "id" TEXT NOT NULL,
+    "contractId" TEXT NOT NULL,
+    "clauseId" TEXT NOT NULL,
+    "order" INTEGER NOT NULL,
+
+    CONSTRAINT "ContractClause_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -40,18 +60,8 @@ CREATE TABLE "Clause" (
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "userId" TEXT NOT NULL,
-    "organizationId" TEXT NOT NULL,
 
     CONSTRAINT "Clause_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "ClausesOnContracts" (
-    "contractId" TEXT NOT NULL,
-    "clauseId" TEXT NOT NULL,
-    "order" INTEGER NOT NULL,
-
-    CONSTRAINT "ClausesOnContracts_pkey" PRIMARY KEY ("contractId","clauseId")
 );
 
 -- CreateTable
@@ -160,13 +170,7 @@ CREATE UNIQUE INDEX "Employee_ssn_key" ON "Employee"("ssn");
 CREATE UNIQUE INDEX "Contract_employeeId_key" ON "Contract"("employeeId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Clause_title_userId_organizationId_key" ON "Clause"("title", "userId", "organizationId");
-
--- CreateIndex
-CREATE INDEX "ClausesOnContracts_contractId_idx" ON "ClausesOnContracts"("contractId");
-
--- CreateIndex
-CREATE INDEX "ClausesOnContracts_clauseId_idx" ON "ClausesOnContracts"("clauseId");
+CREATE UNIQUE INDEX "Clause_title_userId_key" ON "Clause"("title", "userId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "user_email_key" ON "user"("email");
@@ -187,7 +191,7 @@ ALTER TABLE "Employee" ADD CONSTRAINT "Employee_userId_fkey" FOREIGN KEY ("userI
 ALTER TABLE "Employee" ADD CONSTRAINT "Employee_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "organization"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Contract" ADD CONSTRAINT "Contract_employeeId_fkey" FOREIGN KEY ("employeeId") REFERENCES "Employee"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Contract" ADD CONSTRAINT "Contract_employeeId_fkey" FOREIGN KEY ("employeeId") REFERENCES "Employee"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Contract" ADD CONSTRAINT "Contract_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "organization"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -196,16 +200,13 @@ ALTER TABLE "Contract" ADD CONSTRAINT "Contract_organizationId_fkey" FOREIGN KEY
 ALTER TABLE "Contract" ADD CONSTRAINT "Contract_userId_fkey" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "ContractClause" ADD CONSTRAINT "ContractClause_contractId_fkey" FOREIGN KEY ("contractId") REFERENCES "Contract"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ContractClause" ADD CONSTRAINT "ContractClause_clauseId_fkey" FOREIGN KEY ("clauseId") REFERENCES "Clause"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "Clause" ADD CONSTRAINT "Clause_userId_fkey" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "Clause" ADD CONSTRAINT "Clause_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "organization"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "ClausesOnContracts" ADD CONSTRAINT "ClausesOnContracts_contractId_fkey" FOREIGN KEY ("contractId") REFERENCES "Contract"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "ClausesOnContracts" ADD CONSTRAINT "ClausesOnContracts_clauseId_fkey" FOREIGN KEY ("clauseId") REFERENCES "Clause"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "account" ADD CONSTRAINT "account_userId_fkey" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE;

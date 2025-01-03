@@ -1,74 +1,34 @@
 'use client';
 
-import { useState } from 'react';
-
 import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
+import { useClauses } from '@/app/_lib/hooks/use-clauses';
 import { ClauseFormData } from '@/app/_lib/validations/schemas/clause.schema';
 import TipTapEditor from '@/components/TipTapEditor';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PageTransition } from '@/components/ui/transition';
-import { useToast } from '@/hooks/use-toast';
 
 const CreateClausePage = () => {
     const router = useRouter();
-    const { toast } = useToast();
     const [title, setTitle] = useState('');
     const [editorContent, setEditorContent] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
-    const [, setError] = useState<string | null>(null);
+    const { createClause, isCreating } = useClauses();
 
-    const handleSubmit = async () => {
+    const handleSubmit = () => {
         const formData: ClauseFormData = {
             title,
             content: editorContent,
             category: 'default',
         };
 
-        setIsLoading(true);
-
-        try {
-            const response = await fetch('/api/clauses/create', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData),
-            });
-
-            const result = await response.json();
-
-            if (!response.ok) {
-                if (result.issues) {
-                    const errorMessage = result.issues
-                        .map((issue: any) => issue.message)
-                        .join(', ');
-                    throw new Error(errorMessage);
-                }
-                throw new Error(result.error || 'Une erreur est survenue');
-            }
-
-            toast({
-                title: 'Succès! 🎉',
-                description: 'Clause créée avec succès',
-                variant: 'success',
-            });
-
-            router.push('/dashboard/clauses');
-            router.refresh();
-        } catch (error) {
-            console.error('Erreur:', error);
-            toast({
-                title: 'Erreur',
-                description:
-                    error instanceof Error
-                        ? error.message
-                        : 'Une erreur est survenue',
-                variant: 'error',
-            });
-        } finally {
-            setIsLoading(false);
-        }
+        createClause(formData, {
+            onSuccess: () => {
+                router.push('/dashboard/clauses');
+            },
+        });
     };
 
     return (
@@ -99,7 +59,7 @@ const CreateClausePage = () => {
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
                             className='w-full'
-                            disabled={isLoading}
+                            disabled={isCreating}
                         />
                     </div>
                     <div>
@@ -122,9 +82,9 @@ const CreateClausePage = () => {
                         </Button>
                         <Button
                             onClick={handleSubmit}
-                            disabled={isLoading || !title.trim()}
+                            disabled={isCreating || !title.trim()}
                         >
-                            {isLoading && (
+                            {isCreating && (
                                 <Loader2 className='mr-2 h-4 w-4 animate-spin' />
                             )}
                             Créer

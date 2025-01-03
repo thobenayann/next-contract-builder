@@ -1,19 +1,16 @@
 export const DOCUMENT_TYPES = {
-    CONTRACT: 'CONTRACT',
+    CONTRACT_DETERMINED_DURATION: 'CONTRACT_DETERMINED_DURATION',
+    CONTRACT_OPEN_DURATION: 'CONTRACT_OPEN_DURATION',
     AMENDMENT: 'AMENDMENT',
 } as const;
 
-export const DocumentTypes = {
-    Contract: DOCUMENT_TYPES.CONTRACT,
-    Amendment: DOCUMENT_TYPES.AMENDMENT,
-} satisfies Record<string, string>;
-
 export type DocumentType = (typeof DOCUMENT_TYPES)[keyof typeof DOCUMENT_TYPES];
 
-export const DOCUMENT_TYPES_LABELS = {
-    CONTRACT: 'Contrat',
+export const DOCUMENT_TYPES_LABELS: Record<DocumentType, string> = {
+    CONTRACT_DETERMINED_DURATION: 'Contrat à durée déterminée',
+    CONTRACT_OPEN_DURATION: 'Contrat à durée indéterminée',
     AMENDMENT: 'Avenant',
-} as const;
+};
 
 export const GENDERS = {
     MALE: 'MALE',

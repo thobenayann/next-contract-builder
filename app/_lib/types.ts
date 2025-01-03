@@ -1,63 +1,59 @@
-import { Prisma } from '@prisma/client';
+import { Clause, Contract, Employee } from '@prisma/client';
 import { UseFormReturn } from 'react-hook-form';
-import { ContractFormData } from './validations';
+import { ContractFormData } from './validations/schemas/contract.schema';
 
-// Types Prisma
-export type ContractWithRelations = Prisma.ContractGetPayload<{
-    include: {
-        clauses: {
-            include: {
-                clause: true;
-            };
-        };
-        employee: true;
-    };
-}>;
+export interface ContractWithRelations extends Contract {
+    employee: Employee;
+    clauses: {
+        clause: Clause;
+        order: number;
+    }[];
+}
 
-export type EmployeeWithContract = Prisma.EmployeeGetPayload<{
-    include: {
-        contract: true;
-    };
-}>;
-
-// Types pour les formulaires et composants
-type BaseParams = {
-    action: 'create' | 'edit' | 'view';
-};
-
-type ActionParams = BaseParams & {
-    action: 'edit' | 'view';
-    id: string;
-};
-
-type CreateParams = BaseParams & {
-    action: 'create';
-};
-
-export type ContractFormProps = {
-    params: ActionParams | CreateParams;
-    searchParams: {
-        employeeId?: string;
-    };
-};
+export interface ContractFormInitialData {
+    contract?: ContractWithRelations | null;
+    clauses: Clause[];
+    employees: Employee[];
+}
 
 export interface ContractFormClientProps {
-    action: string;
-    initialData: {
-        clauses: Prisma.ClauseGetPayload<{}>[];
-        employees: Prisma.EmployeeGetPayload<{}>[];
-        contract: ContractWithRelations | null;
-    };
+    action: 'create' | 'edit' | 'view';
+    initialData: ContractFormInitialData;
     employeeId?: string;
     contractId?: string;
+}
+
+export interface EmployeeWithContract extends Employee {
+    contract: Contract | null;
+    isOwner?: boolean;
+}
+
+export interface ValidationError {
+    path: string[];
+    message: string;
+}
+
+export interface CreateEmployeeError {
+    validationErrors?: ValidationError[];
 }
 
 export interface ContractFormUIProps {
     form: UseFormReturn<ContractFormData>;
     isViewMode: boolean;
     isEditing: boolean;
-    onSubmit: (data: ContractFormData) => Promise<void>;
-    availableClauses: Prisma.ClauseGetPayload<{}>[];
-    employees: Prisma.EmployeeGetPayload<{}>[];
+    isSubmitting: boolean;
+    onSubmit: (data: ContractFormData) => void;
+    availableClauses: Clause[];
+    employees: Employee[];
     contractId?: string;
+}
+
+export interface ContractFormProps {
+    params: {
+        action: 'create' | 'edit' | 'view';
+        id?: string;
+    };
+    searchParams: {
+        employeeId?: string;
+    };
 }

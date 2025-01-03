@@ -1,3 +1,5 @@
+'use client';
+
 import { ClauseSelector } from '@/components/ClauseSelector';
 import { DraggableList } from '@/components/DraggableList';
 import type { Clause } from '@prisma/client';
@@ -12,29 +14,28 @@ export const ClausesSection = ({
     isViewMode,
     availableClauses,
 }: ClausesSectionProps) => {
-    const { watch, setValue } = useFormContext();
+    const {
+        watch,
+        setValue,
+        formState: { errors },
+    } = useFormContext();
+
+    const selectedClauses = watch('selectedClauses') || [];
 
     return (
         <div className='space-y-4'>
             <div className='flex justify-between items-center'>
-                <h3 className='text-lg font-medium'>Clauses du contrat</h3>
+                <h3 className='text-lg font-semibold'>Clauses du contrat</h3>
                 {!isViewMode && (
                     <ClauseSelector
                         availableClauses={availableClauses}
-                        selectedClauses={watch('selectedClauses').map(
-                            (clause: Clause) => ({
-                                ...clause,
-                                createdAt: new Date(clause.createdAt),
-                                updatedAt: new Date(clause.updatedAt),
-                                userId: clause.userId || '',
-                            })
-                        )}
+                        selectedClauses={selectedClauses}
                         onSelect={(clause) => {
                             setValue('selectedClauses', [
-                                ...watch('selectedClauses'),
+                                ...selectedClauses,
                                 {
                                     ...clause,
-                                    order: watch('selectedClauses').length,
+                                    order: selectedClauses.length,
                                     createdAt: new Date(
                                         clause.createdAt
                                     ).toISOString(),
@@ -48,15 +49,20 @@ export const ClausesSection = ({
                 )}
             </div>
 
-            {watch('selectedClauses').length === 0 ? (
+            {selectedClauses.length === 0 ? (
                 <div className='text-center p-8 border border-dashed rounded-lg'>
                     <p className='text-muted-foreground'>
                         Aucune clause n&apos;a été ajoutée à ce contrat.
                     </p>
+                    {errors.selectedClauses && (
+                        <p className='text-sm text-destructive mt-2'>
+                            {errors.selectedClauses.message as string}
+                        </p>
+                    )}
                 </div>
             ) : (
                 <DraggableList
-                    items={watch('selectedClauses').map((clause: Clause) => ({
+                    items={selectedClauses.map((clause: Clause) => ({
                         ...clause,
                         createdAt: new Date(clause.createdAt),
                         updatedAt: new Date(clause.updatedAt),
@@ -80,7 +86,7 @@ export const ClausesSection = ({
                         if (!isViewMode) {
                             setValue(
                                 'selectedClauses',
-                                watch('selectedClauses')
+                                selectedClauses
                                     .filter((c: Clause) => c.id !== clause.id)
                                     .map((c: Clause, index: number) => ({
                                         ...c,
