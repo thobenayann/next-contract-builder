@@ -1,6 +1,7 @@
 'use client';
 
 import { DOCUMENT_TYPES, DOCUMENT_TYPES_LABELS } from '@/app/_lib/constants';
+import { AVAILABLE_JOBS } from '@/app/_lib/constants/templates';
 import { Input } from '@/components/ui/input';
 import {
     Select,
@@ -129,7 +130,28 @@ export const FormFields = ({ isViewMode, employees }: FormFieldsProps) => {
                     <label className='text-sm font-medium'>
                         Intitulé du poste
                     </label>
-                    <Input {...register('jobTitle')} disabled={isViewMode} />
+                    <Controller
+                        name='jobTitle'
+                        control={control}
+                        render={({ field }) => (
+                            <Select
+                                onValueChange={field.onChange}
+                                value={field.value}
+                                disabled={isViewMode}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder='Sélectionner un poste' />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {AVAILABLE_JOBS.map((job) => (
+                                        <SelectItem key={job} value={job}>
+                                            {job}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        )}
+                    />
                 </div>
             </div>
         </div>

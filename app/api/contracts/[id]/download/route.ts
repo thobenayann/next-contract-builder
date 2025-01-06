@@ -1,15 +1,22 @@
-import { NextResponse } from 'next/server';
-
 import { prisma } from '@/app/_lib/db';
 import { DocumentService } from '@/app/_lib/services/document.service';
+import { getSession } from '@/app/_lib/session';
+import { NextResponse } from 'next/server';
 
 export async function GET(
     _request: Request,
     props: { params: Promise<{ id: string }> }
 ) {
-    const params = await props.params;
-
     try {
+        const session = await getSession();
+        if (!session?.userId) {
+            return NextResponse.json(
+                { error: 'Non authentifié' },
+                { status: 401 }
+            );
+        }
+
+        const params = await props.params;
         const contract = await prisma.contract.findUnique({
             where: { id: params.id },
             include: {
@@ -22,6 +29,7 @@ export async function GET(
                         order: 'asc',
                     },
                 },
+                organization: true,
             },
         });
 
@@ -32,7 +40,15 @@ export async function GET(
             );
         }
 
-        const blob = await DocumentService.generateContract(contract);
+        // Vérifier que l'utilisateur a accès à ce contrat
+        if (contract.organizationId !== session.activeOrganizationId) {
+            return NextResponse.json(
+                { error: 'Non autorisé' },
+                { status: 403 }
+            );
+        }
+
+        const buffer = await DocumentService.generateContract(contract);
 
         const headers = new Headers();
         headers.set(
@@ -44,7 +60,7 @@ export async function GET(
             `attachment; filename="contrat_${contract.employee.lastName}_${contract.employee.firstName}.docx"`
         );
 
-        return new NextResponse(blob, {
+        return new NextResponse(buffer, {
             status: 200,
             headers,
         });

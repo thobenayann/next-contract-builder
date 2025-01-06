@@ -57,3 +57,13 @@ export interface ContractFormProps {
         employeeId?: string;
     };
 }
+
+interface Template {
+    id: string;
+    organizationId: string;
+    name: string;
+    header: string; // JSON TipTap content
+    footer: string; // JSON TipTap content
+    createdAt: Date;
+    updatedAt: Date;
+}

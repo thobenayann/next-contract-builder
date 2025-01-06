@@ -93,35 +93,49 @@ body {
     }
 }
 
-.ProseMirror p.is-editor-empty:first-child::before {
-    color: #adb5bd;
-    content: attr(data-placeholder);
-    float: left;
-    height: 0;
-    pointer-events: none;
-}
-
 .ProseMirror {
-    min-height: 200px;
-    padding: 1rem;
-    border-radius: 0.5rem;
-    outline: none;
-}
+    @apply min-h-[200px] p-4 outline-none;
 
-.ProseMirror > * + * {
-    margin-top: 0.75em;
-}
+    h1 {
+        @apply text-4xl font-bold mb-4;
+    }
 
-.ProseMirror p {
-    white-space: pre-wrap; /* Préserve les espaces et retours à la ligne */
-    word-wrap: break-word; /* Permet le retour à la ligne des mots longs */
-    overflow-wrap: break-word; /* Alternative moderne à word-wrap */
+    h2 {
+        @apply text-3xl font-bold mb-3;
+    }
+
+    h3 {
+        @apply text-2xl font-bold mb-2;
+    }
+
+    p {
+        @apply mb-2;
+    }
 }
 
 .ProseMirror p.is-editor-empty:first-child::before {
-    color: #adb5bd;
+    @apply text-muted-foreground float-left h-0 pointer-events-none;
     content: attr(data-placeholder);
-    float: left;
-    height: 0;
-    pointer-events: none;
+}
+
+.resize-image {
+    &.ProseMirror-selectednode {
+        @apply outline outline-2 outline-blue-400;
+    }
+
+    &.align-left {
+        @apply float-left mr-4 mb-4;
+    }
+
+    &.align-center {
+        @apply block mx-auto mb-4;
+    }
+
+    &.align-right {
+        @apply float-right ml-4 mb-4;
+    }
+
+    .resize-trigger {
+        @apply absolute -right-1.5 -bottom-1.5 w-3 h-3 border border-blue-400 bg-white rounded-full cursor-se-resize;
+    }
 }
